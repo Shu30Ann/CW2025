@@ -3,8 +3,8 @@ package com.comp2042;
 public class GameController implements InputEventListener {
 
     private Board board = new SimpleBoard(25, 10);
-
     private final GuiController viewGuiController;
+    private boolean isPaused;
 
     public GameController(GuiController c) {
         viewGuiController = c;
@@ -14,26 +14,40 @@ public class GameController implements InputEventListener {
         viewGuiController.bindScore(board.getScore().scoreProperty());
     }
 
+    public void togglePause() {
+        isPaused = !isPaused;
+        viewGuiController.updatePauseState(isPaused);
+    }
+
     @Override
     public DownData onDownEvent(MoveEvent event) {
+        if (isPaused) {
+            return new DownData(null, board.getViewData());
+        }
         boolean canMove = board.moveBrickDown();
         ClearRow clearRow = null;
         if (!canMove) {
             board.mergeBrickToBackground();
             clearRow = board.clearRows();
             if (clearRow.getLinesRemoved() > 0) {
-                board.getScore().add(clearRow.getScoreBonus());
+                // Calculate score based on number of lines cleared and current combo
+                int baseScore = calculateLineScore(clearRow.getLinesRemoved());
+                board.getScore().add(baseScore);
+                
+                // Handle combo
+                board.getScore().addCombo();
+                if (board.getScore().comboProperty().get() > 1) {
+                    // Double the score for combos
+                    board.getScore().add(baseScore);
+                }
+            } else {
+                board.getScore().resetCombo();
             }
-            if (board.createNewBrick()) {
+            boolean isCollision = board.createNewBrick();
+            if (isCollision) {
                 viewGuiController.gameOver();
             }
-
             viewGuiController.refreshGameBackground(board.getBoardMatrix());
-
-        } else {
-            if (event.getEventSource() == EventSource.USER) {
-                board.getScore().add(1);
-            }
         }
         return new DownData(clearRow, board.getViewData());
     }
@@ -61,5 +75,28 @@ public class GameController implements InputEventListener {
     public void createNewGame() {
         board.newGame();
         viewGuiController.refreshGameBackground(board.getBoardMatrix());
+    }
+
+    @Override
+    public Score getScore() {
+        return board.getScore();
+    }
+
+    /**
+     * Calculates the score for clearing lines.
+     * Scoring system:
+     * 1 line = 100 points
+     * 2 lines = 300 points
+     * 3 lines = 500 points
+     * 4 lines = 800 points
+     */
+    private int calculateLineScore(int lines) {
+        switch (lines) {
+            case 1: return 100;
+            case 2: return 300;
+            case 3: return 500;
+            case 4: return 800;
+            default: return 0;
+        }
     }
 }

@@ -80,6 +80,10 @@ public class GuiController implements Initializable {
                 if (keyEvent.getCode() == KeyCode.N) {
                     newGame(null);
                 }
+                if (keyEvent.getCode() == KeyCode.P || keyEvent.getCode() == KeyCode.ESCAPE) {
+                    pauseGame(null);
+                    keyEvent.consume();
+                }
             }
         });
         gameOverPanel.setVisible(false);
@@ -187,7 +191,16 @@ public class GuiController implements Initializable {
         if (isPause.getValue() == Boolean.FALSE) {
             DownData downData = eventListener.onDownEvent(event);
             if (downData.getClearRow() != null && downData.getClearRow().getLinesRemoved() > 0) {
-                NotificationPanel notificationPanel = new NotificationPanel("+" + downData.getClearRow().getScoreBonus());
+                // Calculate the score based on lines cleared
+                int scoreToShow = getScoreForLines(downData.getClearRow().getLinesRemoved());
+                // If it's a combo (score was doubled), show that information
+                boolean isCombo = isPreviousLineCleared();
+                String scoreText = "+" + scoreToShow;
+                if (isCombo) {
+                    scoreText += " x2";
+                    scoreToShow *= 2;
+                }
+                NotificationPanel notificationPanel = new NotificationPanel(scoreText);
                 groupNotification.getChildren().add(notificationPanel);
                 notificationPanel.showScore(groupNotification.getChildren());
             }
@@ -196,11 +209,33 @@ public class GuiController implements Initializable {
         gamePanel.requestFocus();
     }
 
+    private boolean isPreviousLineCleared() {
+        return eventListener.getScore().comboProperty().get() > 1;
+    }
+
+    private int getScoreForLines(int lines) {
+        switch (lines) {
+            case 1: return 100;
+            case 2: return 300;
+            case 3: return 500;
+            case 4: return 800;
+            default: return 0;
+        }
+    }
+
     public void setEventListener(InputEventListener eventListener) {
         this.eventListener = eventListener;
     }
 
-    public void bindScore(IntegerProperty integerProperty) {
+    public void bindScore(IntegerProperty scoreProperty) {
+        // Create and bind score label
+        javafx.scene.control.Label scoreLabel = new javafx.scene.control.Label();
+        scoreLabel.textProperty().bind(scoreProperty.asString("Score: %d"));
+        scoreLabel.setTextFill(Color.WHITE);
+        scoreLabel.setFont(Font.font("Arial", 20));
+        scoreLabel.setLayoutX(300);
+        scoreLabel.setLayoutY(20);
+        groupNotification.getChildren().add(scoreLabel);
     }
 
     public void gameOver() {
@@ -220,6 +255,34 @@ public class GuiController implements Initializable {
     }
 
     public void pauseGame(ActionEvent actionEvent) {
+        updatePauseState(!isPause.getValue());
         gamePanel.requestFocus();
+    }
+
+    public void updatePauseState(boolean isPaused) {
+        if (isPaused) {
+            // Create pause overlay
+            Rectangle overlay = new Rectangle(gamePanel.getWidth(), gamePanel.getHeight());
+            overlay.setFill(Color.BLACK);
+            overlay.setOpacity(0.7);
+            
+            javafx.scene.control.Label pauseLabel = new javafx.scene.control.Label("PAUSED");
+            pauseLabel.setTextFill(Color.WHITE);
+            pauseLabel.setFont(Font.font("Arial", 40));
+            pauseLabel.setLayoutX(gamePanel.getLayoutX() + 80);
+            pauseLabel.setLayoutY(gamePanel.getLayoutY() + 200);
+            
+            overlay.setId("pauseOverlay");
+            pauseLabel.setId("pauseLabel");
+            
+            groupNotification.getChildren().addAll(overlay, pauseLabel);
+            timeLine.pause();
+        } else {
+            groupNotification.getChildren().removeIf(node -> 
+                node.getId() != null && (node.getId().equals("pauseOverlay") || node.getId().equals("pauseLabel"))
+            );
+            timeLine.play();
+        }
+        isPause.setValue(isPaused);
     }
 }

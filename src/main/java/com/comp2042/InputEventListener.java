@@ -11,4 +11,10 @@ public interface InputEventListener {
     ViewData onRotateEvent(MoveEvent event);
 
     void createNewGame();
+
+    /**
+     * Gets the current score object.
+     * @return the Score object containing current score and combo information
+     */
+    Score getScore();
 }
