@@ -2,6 +2,7 @@ package com.comp2042;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -19,6 +20,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
+import javafx.beans.value.ObservableValue;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -26,36 +28,41 @@ import java.util.ResourceBundle;
 public class GuiController implements Initializable {
 
     private static final int BRICK_SIZE = 20;
+    private static final int VISIBLE_ROW_OFFSET = 0;
 
-    @FXML
-    private GridPane gamePanel;
+    @FXML private GridPane gamePanel;
+    @FXML private Group groupNotification;
+    @FXML private GridPane brickPanel;
+    @FXML private GameOverPanel gameOverPanel;
+    @FXML private Group gameCanvas;
 
-    @FXML
-    private Group groupNotification;
-
-    @FXML
-    private GridPane brickPanel;
-
-    @FXML
-    private GameOverPanel gameOverPanel;
 
     private Rectangle[][] displayMatrix;
-
-    private InputEventListener eventListener;
-
     private Rectangle[][] rectangles;
-
+    private InputEventListener eventListener;
     private Timeline timeLine;
 
     private final BooleanProperty isPause = new SimpleBooleanProperty();
-
     private final BooleanProperty isGameOver = new SimpleBooleanProperty();
+
+    private double getCellHeight() { return BRICK_SIZE + gamePanel.getVgap(); }
+    private double getCellWidth()  { return BRICK_SIZE + gamePanel.getHgap(); }
+
+    private int getVisibleRowCount(int[][] boardMatrix) { return boardMatrix.length - VISIBLE_ROW_OFFSET; }
+    private double getGamePanelPixelWidth(int[][] boardMatrix) { return boardMatrix[0].length * getCellWidth(); }
+    private double getGamePanelPixelHeight(int[][] boardMatrix) { return getVisibleRowCount(boardMatrix) * getCellHeight(); }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        Font.loadFont(getClass().getClassLoader().getResource("digital.ttf").toExternalForm(), 38);
+        // load font (if available)
+        try {
+            Font.loadFont(getClass().getClassLoader().getResource("digital.ttf").toExternalForm(), 38);
+        } catch (Exception ignored) {}
+
         gamePanel.setFocusTraversable(true);
         gamePanel.requestFocus();
+
+        // Key handling
         gamePanel.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent keyEvent) {
@@ -63,48 +70,72 @@ public class GuiController implements Initializable {
                     if (keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.A) {
                         refreshBrick(eventListener.onLeftEvent(new MoveEvent(EventType.LEFT, EventSource.USER)));
                         keyEvent.consume();
-                    }
-                    if (keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.D) {
+                    } else if (keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.D) {
                         refreshBrick(eventListener.onRightEvent(new MoveEvent(EventType.RIGHT, EventSource.USER)));
                         keyEvent.consume();
-                    }
-                    if (keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.W) {
+                    } else if (keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.W) {
                         refreshBrick(eventListener.onRotateEvent(new MoveEvent(EventType.ROTATE, EventSource.USER)));
                         keyEvent.consume();
-                    }
-                    if (keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.S) {
+                    } else if (keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.S) {
                         moveDown(new MoveEvent(EventType.DOWN, EventSource.USER));
                         keyEvent.consume();
                     }
                 }
                 if (keyEvent.getCode() == KeyCode.N) {
                     newGame(null);
-                }
-                if (keyEvent.getCode() == KeyCode.P || keyEvent.getCode() == KeyCode.ESCAPE) {
+                } else if (keyEvent.getCode() == KeyCode.P || keyEvent.getCode() == KeyCode.ESCAPE) {
                     pauseGame(null);
                     keyEvent.consume();
                 }
             }
         });
+
         gameOverPanel.setVisible(false);
 
         final Reflection reflection = new Reflection();
         reflection.setFraction(0.8);
         reflection.setTopOpacity(0.9);
         reflection.setTopOffset(-12);
+
+        // When scene is attached, add resize listeners to recenter
+        gamePanel.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.widthProperty().addListener((o, oldW, newW) -> centerGamePanel());
+                newScene.heightProperty().addListener((o, oldH, newH) -> centerGamePanel());
+            }
+        });
     }
 
+    /**
+     * Initialize the visible grid and the brick rectangles.
+     * boardMatrix: full logical board (including hidden rows)
+     * brick: current ViewData (brick shape + position)
+     */
     public void initGameView(int[][] boardMatrix, ViewData brick) {
+        // set the preferred size of gamePanel (so centering works)
+        double panelW = getGamePanelPixelWidth(boardMatrix);
+        double panelH = getGamePanelPixelHeight(boardMatrix);
+        gamePanel.setPrefWidth(panelW);
+        gamePanel.setPrefHeight(panelH);
+
+        // Center the gamePanel in the window
+        double windowWidth = 600;
+        double windowHeight = 800;
+        double gameWidth = boardMatrix[0].length * BRICK_SIZE;
+        double gameHeight = (boardMatrix.length - VISIBLE_ROW_OFFSET) * BRICK_SIZE;
+
+        // create displayMatrix ONCE and fill visible rows only
         displayMatrix = new Rectangle[boardMatrix.length][boardMatrix[0].length];
-        for (int i = 2; i < boardMatrix.length; i++) {
+        for (int i = VISIBLE_ROW_OFFSET; i < boardMatrix.length; i++) {
             for (int j = 0; j < boardMatrix[i].length; j++) {
                 Rectangle rectangle = new Rectangle(BRICK_SIZE, BRICK_SIZE);
                 rectangle.setFill(Color.TRANSPARENT);
                 displayMatrix[i][j] = rectangle;
-                gamePanel.add(rectangle, j, i - 2);
+                gamePanel.add(rectangle, j, i - VISIBLE_ROW_OFFSET);
             }
         }
 
+        // create rectangles for the current falling brick
         rectangles = new Rectangle[brick.getBrickData().length][brick.getBrickData()[0].length];
         for (int i = 0; i < brick.getBrickData().length; i++) {
             for (int j = 0; j < brick.getBrickData()[i].length; j++) {
@@ -114,57 +145,49 @@ public class GuiController implements Initializable {
                 brickPanel.add(rectangle, j, i);
             }
         }
-        brickPanel.setLayoutX(gamePanel.getLayoutX() + brick.getxPosition() * brickPanel.getVgap() + brick.getxPosition() * BRICK_SIZE);
-        brickPanel.setLayoutY(-42 + gamePanel.getLayoutY() + brick.getyPosition() * brickPanel.getHgap() + brick.getyPosition() * BRICK_SIZE);
 
-
-        timeLine = new Timeline(new KeyFrame(
-                Duration.millis(400),
+        // start timeline
+        timeLine = new Timeline(new KeyFrame(Duration.millis(400),
                 ae -> moveDown(new MoveEvent(EventType.DOWN, EventSource.THREAD))
         ));
         timeLine.setCycleCount(Timeline.INDEFINITE);
         timeLine.play();
+
+        // center and align brick after layout pass
+        Platform.runLater(() -> {
+            centerGamePanel();
+            refreshBrick(brick);
+            gamePanel.requestFocus();
+        });
     }
 
     private Paint getFillColor(int i) {
-        Paint returnPaint;
         switch (i) {
-            case 0:
-                returnPaint = Color.TRANSPARENT;
-                break;
-            case 1:
-                returnPaint = Color.AQUA;
-                break;
-            case 2:
-                returnPaint = Color.BLUEVIOLET;
-                break;
-            case 3:
-                returnPaint = Color.DARKGREEN;
-                break;
-            case 4:
-                returnPaint = Color.YELLOW;
-                break;
-            case 5:
-                returnPaint = Color.RED;
-                break;
-            case 6:
-                returnPaint = Color.BEIGE;
-                break;
-            case 7:
-                returnPaint = Color.BURLYWOOD;
-                break;
-            default:
-                returnPaint = Color.WHITE;
-                break;
+            case 0: return Color.TRANSPARENT;
+            case 1: return Color.AQUA;
+            case 2: return Color.BLUEVIOLET;
+            case 3: return Color.DARKGREEN;
+            case 4: return Color.YELLOW;
+            case 5: return Color.RED;
+            case 6: return Color.BEIGE;
+            case 7: return Color.BURLYWOOD;
+            default: return Color.WHITE;
         }
-        return returnPaint;
     }
 
-
     private void refreshBrick(ViewData brick) {
-        if (isPause.getValue() == Boolean.FALSE) {
-            brickPanel.setLayoutX(gamePanel.getLayoutX() + brick.getxPosition() * brickPanel.getVgap() + brick.getxPosition() * BRICK_SIZE);
-            brickPanel.setLayoutY(-42 + gamePanel.getLayoutY() + brick.getyPosition() * brickPanel.getHgap() + brick.getyPosition() * BRICK_SIZE);
+        if (!isPause.getValue()) {
+            double cellW = getCellWidth();
+            double cellH = getCellHeight();
+
+            brickPanel.setLayoutX(
+                    gamePanel.getLayoutX() + brick.getxPosition() * cellW
+            );
+
+            brickPanel.setLayoutY(
+                    gamePanel.getLayoutY() + (brick.getyPosition() - VISIBLE_ROW_OFFSET) * cellH
+            );
+
             for (int i = 0; i < brick.getBrickData().length; i++) {
                 for (int j = 0; j < brick.getBrickData()[i].length; j++) {
                     setRectangleData(brick.getBrickData()[i][j], rectangles[i][j]);
@@ -173,8 +196,10 @@ public class GuiController implements Initializable {
         }
     }
 
+
     public void refreshGameBackground(int[][] board) {
-        for (int i = 2; i < board.length; i++) {
+        // update visible rows only
+        for (int i = VISIBLE_ROW_OFFSET; i < board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
                 setRectangleData(board[i][j], displayMatrix[i][j]);
             }
@@ -191,9 +216,7 @@ public class GuiController implements Initializable {
         if (isPause.getValue() == Boolean.FALSE) {
             DownData downData = eventListener.onDownEvent(event);
             if (downData.getClearRow() != null && downData.getClearRow().getLinesRemoved() > 0) {
-                // Calculate the score based on lines cleared
                 int scoreToShow = getScoreForLines(downData.getClearRow().getLinesRemoved());
-                // If it's a combo (score was doubled), show that information
                 boolean isCombo = isPreviousLineCleared();
                 String scoreText = "+" + scoreToShow;
                 if (isCombo) {
@@ -228,7 +251,6 @@ public class GuiController implements Initializable {
     }
 
     public void bindScore(IntegerProperty scoreProperty) {
-        // Create and bind score label
         javafx.scene.control.Label scoreLabel = new javafx.scene.control.Label();
         scoreLabel.textProperty().bind(scoreProperty.asString("Score: %d"));
         scoreLabel.setTextFill(Color.WHITE);
@@ -261,28 +283,48 @@ public class GuiController implements Initializable {
 
     public void updatePauseState(boolean isPaused) {
         if (isPaused) {
-            // Create pause overlay
             Rectangle overlay = new Rectangle(gamePanel.getWidth(), gamePanel.getHeight());
             overlay.setFill(Color.BLACK);
             overlay.setOpacity(0.7);
-            
+
             javafx.scene.control.Label pauseLabel = new javafx.scene.control.Label("PAUSED");
             pauseLabel.setTextFill(Color.WHITE);
             pauseLabel.setFont(Font.font("Arial", 40));
             pauseLabel.setLayoutX(gamePanel.getLayoutX() + 80);
             pauseLabel.setLayoutY(gamePanel.getLayoutY() + 200);
-            
+
             overlay.setId("pauseOverlay");
             pauseLabel.setId("pauseLabel");
-            
+
             groupNotification.getChildren().addAll(overlay, pauseLabel);
             timeLine.pause();
         } else {
-            groupNotification.getChildren().removeIf(node -> 
-                node.getId() != null && (node.getId().equals("pauseOverlay") || node.getId().equals("pauseLabel"))
+            groupNotification.getChildren().removeIf(node ->
+                    node.getId() != null && (node.getId().equals("pauseOverlay") || node.getId().equals("pauseLabel"))
             );
             timeLine.play();
         }
         isPause.setValue(isPaused);
     }
+
+    private void centerGamePanel() {
+        if (gamePanel.getScene() == null) return;
+
+        double sceneWidth = gamePanel.getScene().getWidth();
+        double sceneHeight = gamePanel.getScene().getHeight();
+
+        double gamePanelWidth = gamePanel.getPrefWidth();
+        double gamePanelHeight = gamePanel.getPrefHeight();
+
+        if (gamePanelWidth <= 0) gamePanelWidth = gamePanel.getWidth();
+        if (gamePanelHeight <= 0) gamePanelHeight = gamePanel.getHeight();
+
+        double centeredX = Math.max(0, (sceneWidth - gamePanelWidth) / 2.0);
+        double centeredY = Math.max(0, (sceneHeight - gamePanelHeight) / 2.0);
+
+        // 👇 Only center the entire canvas, not individual parts
+        gameCanvas.setLayoutX(centeredX);
+        gameCanvas.setLayoutY(centeredY);
+    }
+
 }
