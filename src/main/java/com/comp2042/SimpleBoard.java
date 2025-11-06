@@ -15,12 +15,15 @@ public class SimpleBoard implements Board {
     private int[][] currentGameMatrix;
     private Point currentOffset;
     private final Score score;
+    private Brick nextBrick;
+
 
     public SimpleBoard(int width, int height) {
         this.width = width;
         this.height = height;
         currentGameMatrix = new int[width][height];
         brickGenerator = new RandomBrickGenerator();
+        nextBrick = brickGenerator.getBrick();
         brickRotator = new BrickRotator();
         score = new Score();
     }
@@ -81,10 +84,16 @@ public class SimpleBoard implements Board {
         }
     }
 
+
     @Override
     public boolean createNewBrick() {
-        Brick currentBrick = brickGenerator.getBrick();
+        // Use the previously prepared next brick as the current brick
+        Brick currentBrick = nextBrick;
         brickRotator.setBrick(currentBrick);
+
+        // Generate a new next brick
+        nextBrick = brickGenerator.getBrick();
+
         // Center the new brick horizontally on the board
         int[][] shape = brickRotator.getCurrentShape();
         int shapeWidth = shape[0].length;
@@ -94,9 +103,11 @@ public class SimpleBoard implements Board {
             startX = 0;
         }
         currentOffset = new Point(startX, 0);
-        // return true if new brick immediately collides (game over)
+
+        // Return true if new brick immediately collides (game over)
         return MatrixOperations.intersect(currentGameMatrix, shape, (int) currentOffset.getX(), (int) currentOffset.getY());
     }
+
 
     @Override
     public int[][] getBoardMatrix() {
@@ -133,4 +144,14 @@ public class SimpleBoard implements Board {
         score.reset();
         createNewBrick();
     }
+    
+    public ViewData getNextBrickViewData() {
+        return new ViewData(
+            nextBrick.getShapeMatrix().get(0),
+            0, 0,
+            nextBrick.getShapeMatrix().get(0)
+        );
+    }
+
+
 }

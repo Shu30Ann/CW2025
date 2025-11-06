@@ -17,4 +17,11 @@ public interface InputEventListener {
      * @return the Score object containing current score and combo information
      */
     Score getScore();
+
+    /**
+     * Gets the current board matrix.
+     * This is used by the GUI to calculate where the ghost piece should appear.
+     * @return a 2D int array representing the current state of the board.
+     */
+    int[][] getBoardMatrix();
 }

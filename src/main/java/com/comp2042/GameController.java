@@ -9,6 +9,7 @@ public class GameController implements InputEventListener {
     public GameController(GuiController c) {
         viewGuiController = c;
         board.createNewBrick();
+        viewGuiController.showNextShape(board.getNextBrickViewData());
         viewGuiController.setEventListener(this);
         viewGuiController.initGameView(board.getBoardMatrix(), board.getViewData());
         viewGuiController.bindScore(board.getScore().scoreProperty());
@@ -18,6 +19,14 @@ public class GameController implements InputEventListener {
         isPaused = !isPaused;
         viewGuiController.updatePauseState(isPaused);
     }
+
+    @Override
+    public int[][] getBoardMatrix() {
+        // Return your game’s board matrix here.
+        // Example:
+        return board.getBoardMatrix(); // if your Board class has such a method
+    }
+
 
     @Override
     public DownData onDownEvent(MoveEvent event) {
@@ -43,11 +52,17 @@ public class GameController implements InputEventListener {
             } else {
                 board.getScore().resetCombo();
             }
+
             boolean isCollision = board.createNewBrick();
             if (isCollision) {
                 viewGuiController.gameOver();
+            } else {
+                // Update the next shape preview
+                viewGuiController.showNextShape(board.getNextBrickViewData());
             }
+
             viewGuiController.refreshGameBackground(board.getBoardMatrix());
+
         }
         return new DownData(clearRow, board.getViewData());
     }

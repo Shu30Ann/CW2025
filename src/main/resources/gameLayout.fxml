@@ -2,6 +2,7 @@
 <?import javafx.scene.Group?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import java.net.URL?>
 
@@ -9,18 +10,34 @@
       xmlns:fx="http://javafx.com/fxml"
       prefWidth="600" prefHeight="800">
 
-    <!-- 👇 Everything now inside gameCanvas -->
+    <!-- 👇 Everything drawn here -->
     <Group fx:id="gameCanvas">
 
-        <!-- Blue background game area -->
-        <GridPane fx:id="gamePanel" hgap="1" vgap="1"
+        <!-- 🟦 Main game background (blue bordered area) -->
+        <GridPane fx:id="gamePanel"
+                  hgap="1" vgap="1"
                   style="-fx-background-color: lightblue; -fx-border-color: blue; -fx-border-width: 4;"/>
 
-        <!-- The falling brick layer -->
-        <GridPane fx:id="brickPanel" vgap="1" hgap="1"/>
+        
+        <GridPane fx:id="ghostPanel" hgap="1" vgap="1" mouseTransparent="true"/>
+        
+        <!-- 🧱 Falling brick layer -->
+        <GridPane fx:id="brickPanel" vgap="1" hgap="1"/>   
 
-        <!-- Notifications and game over screen -->
-        <Group fx:id="groupNotification">
+        <!-- 🎯 Next Block preview box (top-right) -->
+        <StackPane fx:id="nextBlockBox"
+                   layoutX="430" layoutY="60"
+                   prefWidth="120" prefHeight="120"
+                   style="-fx-background-color: rgba(0,0,0,0.3);
+                          -fx-border-color: white;
+                          -fx-border-width: 2;">
+            <GridPane fx:id="nextShapePanel"
+                      hgap="1" vgap="1"
+                      alignment="CENTER"/>
+        </StackPane>
+
+        <!-- 💬 Notification group (score popups, pause, etc.) -->
+        <Group fx:id="groupNotification" layoutX="14" layoutY="20">
             <VBox alignment="CENTER">
                 <GameOverPanel fx:id="gameOverPanel"/>
             </VBox>

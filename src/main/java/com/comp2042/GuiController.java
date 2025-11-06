@@ -15,6 +15,7 @@ import javafx.scene.effect.Reflection;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
@@ -35,6 +36,10 @@ public class GuiController implements Initializable {
     @FXML private GridPane brickPanel;
     @FXML private GameOverPanel gameOverPanel;
     @FXML private Group gameCanvas;
+    @FXML private StackPane nextBlockBox;
+    @FXML private GridPane nextShapePanel;
+    @FXML private GridPane ghostPanel;
+
 
 
     private Rectangle[][] displayMatrix;
@@ -193,6 +198,7 @@ public class GuiController implements Initializable {
                     setRectangleData(brick.getBrickData()[i][j], rectangles[i][j]);
                 }
             }
+            
         }
     }
 
@@ -259,6 +265,24 @@ public class GuiController implements Initializable {
         scoreLabel.setLayoutY(20);
         groupNotification.getChildren().add(scoreLabel);
     }
+
+    public void showNextShape(ViewData nextBrick) {
+        nextShapePanel.getChildren().clear();
+
+        int[][] shape = nextBrick.getBrickData();
+        for (int i = 0; i < shape.length; i++) {
+            for (int j = 0; j < shape[i].length; j++) {
+                if (shape[i][j] != 0) {
+                    Rectangle rect = new Rectangle(BRICK_SIZE, BRICK_SIZE);
+                    rect.setFill(getFillColor(shape[i][j]));
+                    rect.setArcHeight(6);
+                    rect.setArcWidth(6);
+                    nextShapePanel.add(rect, j, i);
+                }
+            }
+        }
+    }
+
 
     public void gameOver() {
         timeLine.stop();

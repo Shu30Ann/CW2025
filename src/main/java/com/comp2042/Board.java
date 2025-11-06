@@ -23,4 +23,6 @@ public interface Board {
     Score getScore();
 
     void newGame();
+
+    ViewData getNextBrickViewData();
 }
