@@ -14,7 +14,9 @@ import javafx.scene.Group;
 import javafx.scene.effect.Reflection;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -85,6 +87,10 @@ public class GuiController implements Initializable {
                         moveDown(new MoveEvent(EventType.DOWN, EventSource.USER));
                         keyEvent.consume();
                     }
+                    else if (keyEvent.getCode() == KeyCode.ENTER) {
+                        eventListener.hardDrop();
+                        keyEvent.consume();
+                    }
                 }
                 if (keyEvent.getCode() == KeyCode.N) {
                     newGame(null);
@@ -151,6 +157,20 @@ public class GuiController implements Initializable {
             }
         }
 
+        // Initialize ghostPanel with the same grid size as gamePanel
+        ghostPanel.getChildren().clear();
+        ghostPanel.getColumnConstraints().clear();
+        ghostPanel.getRowConstraints().clear();
+
+        for (int col = 0; col < boardMatrix[0].length; col++) {
+            ghostPanel.getColumnConstraints().add(new ColumnConstraints(BRICK_SIZE));
+        }
+
+        for (int row = 0; row < boardMatrix.length - VISIBLE_ROW_OFFSET; row++) {
+            ghostPanel.getRowConstraints().add(new RowConstraints(BRICK_SIZE));
+        }
+
+
         // start timeline
         timeLine = new Timeline(new KeyFrame(Duration.millis(400),
                 ae -> moveDown(new MoveEvent(EventType.DOWN, EventSource.THREAD))
@@ -198,6 +218,10 @@ public class GuiController implements Initializable {
                     setRectangleData(brick.getBrickData()[i][j], rectangles[i][j]);
                 }
             }
+
+            // at end of refreshBrick (after updating brickPanel and rectangles)
+            refreshGhost(brick, eventListener.getBoardMatrix());
+
             
         }
     }
@@ -350,5 +374,63 @@ public class GuiController implements Initializable {
         gameCanvas.setLayoutX(centeredX);
         gameCanvas.setLayoutY(centeredY);
     }
+
+
+    /**
+     * Draw ghost of current falling brick.
+     * ghost X = brick.getxPosition()
+     * ghost Y = maximum drop before collision
+     *
+     * We add rectangles to ghostPanel at board grid coords (col = j + ghostX, row = i + ghostY - VISIBLE_ROW_OFFSET).
+     */
+    private void refreshGhost(ViewData brick, int[][] boardMatrix) {
+        // defensive
+        if (brick == null || boardMatrix == null) {
+            ghostPanel.getChildren().clear();
+            return;
+        }
+
+        int[][] shape = brick.getBrickData();
+        if (shape == null) {
+            ghostPanel.getChildren().clear();
+            return;
+        }
+
+        // start from falling block's X and Y (ghost must follow X exactly)
+        final int ghostX = brick.getxPosition();
+        int ghostY = brick.getyPosition();
+
+        // guard invalid values
+        if (ghostX < 0) {
+            ghostPanel.getChildren().clear();
+            return;
+        }
+
+        // compute landing Y: increment while placing at (ghostX, ghostY+1) does NOT intersect
+        while (!MatrixOperations.intersect(boardMatrix, shape, ghostX, ghostY + 1)) {
+            ghostY++;
+        }
+
+        // clear previous ghost and draw new ghost directly on the same board grid
+        ghostPanel.getChildren().clear();
+
+        for (int i = 0; i < shape.length; i++) {
+            for (int j = 0; j < shape[i].length; j++) {
+                if (shape[i][j] != 0) {
+                    Rectangle rect = new Rectangle(BRICK_SIZE, BRICK_SIZE);
+                    rect.setFill(Color.web("#FFFFFF", 0.22)); // translucent shadow
+                    rect.setArcHeight(6);
+                    rect.setArcWidth(6);
+                    // place at the board column/row. Subtract VISIBLE_ROW_OFFSET for visible indexing.
+                    ghostPanel.add(rect, j + ghostX, i + ghostY - VISIBLE_ROW_OFFSET);
+                }
+            }
+        }
+    }
+
+
+
+
+
 
 }

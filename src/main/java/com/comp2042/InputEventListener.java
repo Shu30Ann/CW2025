@@ -24,4 +24,7 @@ public interface InputEventListener {
      * @return a 2D int array representing the current state of the board.
      */
     int[][] getBoardMatrix();
+
+    void hardDrop();
+
 }

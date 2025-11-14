@@ -85,6 +85,44 @@ public class GameController implements InputEventListener {
         return board.getViewData();
     }
 
+    public void hardDrop() {
+        if (isPaused) return;
+
+        // Keep moving down until cannot
+        boolean moved = true;
+        while (moved) {
+            moved = board.moveBrickDown();
+        }
+
+        // The brick stops -> lock it
+        board.mergeBrickToBackground();
+
+        // Clear completed rows
+        ClearRow clearRow = board.clearRows();
+        if (clearRow.getLinesRemoved() > 0) {
+            int baseScore = calculateLineScore(clearRow.getLinesRemoved());
+            board.getScore().add(baseScore);
+
+            board.getScore().addCombo();
+            if (board.getScore().comboProperty().get() > 1) {
+                board.getScore().add(baseScore);
+            }
+        } else {
+            board.getScore().resetCombo();
+        }
+
+        // Spawn the next brick
+        boolean isCollision = board.createNewBrick();
+        if (isCollision) {
+            viewGuiController.gameOver();
+            return;
+        }
+
+        // Update panels
+        viewGuiController.showNextShape(board.getNextBrickViewData());
+        viewGuiController.refreshGameBackground(board.getBoardMatrix());
+    }
+
 
     @Override
     public void createNewGame() {
