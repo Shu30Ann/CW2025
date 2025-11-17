@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.geometry.Insets?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         fx:controller="com.comp2042.DifficultyController"
+         prefHeight="600.0" prefWidth="800.0"
+         style="-fx-background-color: black;">
+    
+    <VBox fx:id="menuRoot" alignment="CENTER" spacing="20">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
+
+        <Text fx:id="titleText" 
+              text="SELECT DIFFICULTY" 
+              style="-fx-fill: white; -fx-font-size: 36px; -fx-font-weight: bold;"/>
+
+        <Button text="Easy" 
+                onAction="#startEasy"
+                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 20px; -fx-min-width: 240px;"/>
+
+        <Button text="Medium" 
+                onAction="#startMedium"
+                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 20px; -fx-min-width: 240px;"/>
+
+        <Button text="Hard" 
+                onAction="#startHard"
+                style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-size: 20px; -fx-min-width: 240px;"/>
+
+        <Button text="Back" 
+                onAction="#backToMain"
+                style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-size: 16px; -fx-min-width: 120px;"/>
+    </VBox>
+</StackPane>

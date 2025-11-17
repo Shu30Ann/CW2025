@@ -70,3 +70,23 @@
     -fx-fill: yellow;
     -fx-text-fill: yellow;
 }
+
+/* Pause menu styling */
+.pauseBox {
+    -fx-background-color: rgba(20,20,20,0.85);
+    -fx-padding: 18px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 12, 0.0, 0, 6);
+}
+
+.pauseBox > .label {
+    -fx-font-family: "Let's go Digital";
+    -fx-font-size: 30px;
+    -fx-text-fill: white;
+}
+
+.pauseBox > .button {
+    -fx-font-size: 14px;
+    -fx-padding: 8px 12px;
+}

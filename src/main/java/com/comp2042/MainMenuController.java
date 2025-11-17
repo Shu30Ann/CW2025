@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 import java.io.IOException;
+ 
 
 public class MainMenuController {
 
@@ -17,26 +18,16 @@ public class MainMenuController {
     @FXML
     private void startGame() {
         try {
-            // Load the game scene
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gameLayout.fxml"));
-            Parent gameRoot = loader.load();
-            Scene gameScene = new Scene(gameRoot, 800, 600);
-            
-            // Get the current stage
+            // Open the difficulty selection menu (styled like main menu)
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/difficultyMenu.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 800, 600);
+
             Stage stage = (Stage) menuRoot.getScene().getWindow();
-            
-            // Set up the game controller
-            GuiController guiController = loader.getController();
-            new GameController(guiController);
-            
-            // Set the game scene
-            stage.setScene(gameScene);
+            stage.setScene(scene);
             stage.show();
-            
-            // Give focus to the game scene for keyboard input
-            gameRoot.requestFocus();
         } catch (IOException e) {
-            showError("Error loading game scene: " + e.getMessage());
+            showError("Error loading difficulty menu: " + e.getMessage());
         }
     }
 

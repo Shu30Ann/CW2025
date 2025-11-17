@@ -5,13 +5,19 @@ public class GameController implements InputEventListener {
     private Board board = new SimpleBoard(25, 10);
     private final GuiController viewGuiController;
     private boolean isPaused;
+    private GameDifficulty difficulty;
 
     public GameController(GuiController c) {
+        this(c, GameDifficulty.MEDIUM);
+    }
+
+    public GameController(GuiController c, GameDifficulty difficulty) {
+        this.difficulty = difficulty;
         viewGuiController = c;
         board.createNewBrick();
         viewGuiController.showNextShape(board.getNextBrickViewData());
         viewGuiController.setEventListener(this);
-        viewGuiController.initGameView(board.getBoardMatrix(), board.getViewData());
+        viewGuiController.initGameView(board.getBoardMatrix(), board.getViewData(), difficulty);
         viewGuiController.bindScore(board.getScore().scoreProperty());
     }
 

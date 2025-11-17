@@ -23,7 +23,18 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
-import javafx.beans.value.ObservableValue;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ChoiceDialog;
+import javafx.geometry.Pos;
+import javafx.scene.layout.VBox;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import java.io.IOException;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.DoubleBinding;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -87,7 +98,7 @@ public class GuiController implements Initializable {
                         moveDown(new MoveEvent(EventType.DOWN, EventSource.USER));
                         keyEvent.consume();
                     }
-                    else if (keyEvent.getCode() == KeyCode.ENTER) {
+                    else if (keyEvent.getCode() == KeyCode.SPACE) {
                         eventListener.hardDrop();
                         keyEvent.consume();
                     }
@@ -113,6 +124,20 @@ public class GuiController implements Initializable {
             if (newScene != null) {
                 newScene.widthProperty().addListener((o, oldW, newW) -> centerGamePanel());
                 newScene.heightProperty().addListener((o, oldH, newH) -> centerGamePanel());
+                // bind scaling of the entire gameCanvas so UI scales when window is resized
+                DoubleBinding scaleBinding = Bindings.createDoubleBinding(() -> {
+                    double w = newScene.getWidth();
+                    double h = newScene.getHeight();
+                    double targetW = gamePanel.getPrefWidth() <= 0 ? gamePanel.getWidth() : gamePanel.getPrefWidth();
+                    double targetH = gamePanel.getPrefHeight() <= 0 ? gamePanel.getHeight() : gamePanel.getPrefHeight();
+                    if (targetW <= 0 || targetH <= 0) return 1.0;
+                    double sx = w / targetW;
+                    double sy = h / targetH;
+                    return Math.max(0.5, Math.min(1.0, Math.min(sx, sy))); // clamp between 0.5 and 1.0
+                }, newScene.widthProperty(), newScene.heightProperty(), gamePanel.prefWidthProperty(), gamePanel.prefHeightProperty());
+
+                gameCanvas.scaleXProperty().bind(scaleBinding);
+                gameCanvas.scaleYProperty().bind(scaleBinding);
             }
         });
     }
@@ -122,7 +147,7 @@ public class GuiController implements Initializable {
      * boardMatrix: full logical board (including hidden rows)
      * brick: current ViewData (brick shape + position)
      */
-    public void initGameView(int[][] boardMatrix, ViewData brick) {
+    public void initGameView(int[][] boardMatrix, ViewData brick, GameDifficulty difficulty) {
         // set the preferred size of gamePanel (so centering works)
         double panelW = getGamePanelPixelWidth(boardMatrix);
         double panelH = getGamePanelPixelHeight(boardMatrix);
@@ -130,10 +155,6 @@ public class GuiController implements Initializable {
         gamePanel.setPrefHeight(panelH);
 
         // Center the gamePanel in the window
-        double windowWidth = 600;
-        double windowHeight = 800;
-        double gameWidth = boardMatrix[0].length * BRICK_SIZE;
-        double gameHeight = (boardMatrix.length - VISIBLE_ROW_OFFSET) * BRICK_SIZE;
 
         // create displayMatrix ONCE and fill visible rows only
         displayMatrix = new Rectangle[boardMatrix.length][boardMatrix[0].length];
@@ -172,11 +193,7 @@ public class GuiController implements Initializable {
 
 
         // start timeline
-        timeLine = new Timeline(new KeyFrame(Duration.millis(400),
-                ae -> moveDown(new MoveEvent(EventType.DOWN, EventSource.THREAD))
-        ));
-        timeLine.setCycleCount(Timeline.INDEFINITE);
-        timeLine.play();
+        createTimeline(difficulty.getDropDelayMillis());
 
         // center and align brick after layout pass
         Platform.runLater(() -> {
@@ -314,6 +331,17 @@ public class GuiController implements Initializable {
         isGameOver.setValue(Boolean.TRUE);
     }
 
+    private void createTimeline(int delayMillis) {
+        if (timeLine != null) {
+            try { timeLine.stop(); } catch (Exception ignored) {}
+        }
+        timeLine = new Timeline(new KeyFrame(Duration.millis(delayMillis),
+                ae -> moveDown(new MoveEvent(EventType.DOWN, EventSource.THREAD))
+        ));
+        timeLine.setCycleCount(Timeline.INDEFINITE);
+        timeLine.play();
+    }
+
     public void newGame(ActionEvent actionEvent) {
         timeLine.stop();
         gameOverPanel.setVisible(false);
@@ -331,26 +359,76 @@ public class GuiController implements Initializable {
 
     public void updatePauseState(boolean isPaused) {
         if (isPaused) {
-            Rectangle overlay = new Rectangle(gamePanel.getWidth(), gamePanel.getHeight());
+                Rectangle overlay = new Rectangle();
+                overlay.widthProperty().bind(gamePanel.widthProperty());
+                overlay.heightProperty().bind(gamePanel.heightProperty());
             overlay.setFill(Color.BLACK);
-            overlay.setOpacity(0.7);
-
-            javafx.scene.control.Label pauseLabel = new javafx.scene.control.Label("PAUSED");
-            pauseLabel.setTextFill(Color.WHITE);
-            pauseLabel.setFont(Font.font("Arial", 40));
-            pauseLabel.setLayoutX(gamePanel.getLayoutX() + 80);
-            pauseLabel.setLayoutY(gamePanel.getLayoutY() + 200);
-
+            overlay.setOpacity(0.65);
             overlay.setId("pauseOverlay");
-            pauseLabel.setId("pauseLabel");
 
-            groupNotification.getChildren().addAll(overlay, pauseLabel);
+            // Pause menu box
+            VBox pauseBox = new VBox(14);
+            pauseBox.setAlignment(Pos.CENTER);
+            pauseBox.getStyleClass().add("pauseBox");
+            pauseBox.setId("pauseMenuBox");
+
+                // position overlay and pauseBox relative to the gamePanel inside groupNotification
+                overlay.layoutXProperty().bind(gamePanel.layoutXProperty().subtract(groupNotification.layoutXProperty()));
+                overlay.layoutYProperty().bind(gamePanel.layoutYProperty().subtract(groupNotification.layoutYProperty()));
+
+                pauseBox.layoutXProperty().bind(gamePanel.layoutXProperty().subtract(groupNotification.layoutXProperty()).add(
+                    gamePanel.widthProperty().subtract(pauseBox.widthProperty()).divide(2)));
+                pauseBox.layoutYProperty().bind(gamePanel.layoutYProperty().subtract(groupNotification.layoutYProperty()).add(
+                    gamePanel.heightProperty().subtract(pauseBox.heightProperty()).divide(2)));
+
+            Label pauseLabel = new Label("PAUSED");
+            pauseLabel.setTextFill(Color.WHITE);
+            pauseLabel.setFont(Font.font("Arial", 36));
+
+            Button resumeBtn = new Button("Resume");
+            resumeBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-min-width: 160px;");
+            resumeBtn.setOnAction(e -> updatePauseState(false));
+
+            Button changeDiffBtn = new Button("Change Difficulty");
+            changeDiffBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px; -fx-min-width: 180px;");
+            changeDiffBtn.setOnAction(e -> {
+                ChoiceDialog<GameDifficulty> dialog = new ChoiceDialog<>(GameDifficulty.MEDIUM, GameDifficulty.EASY, GameDifficulty.MEDIUM, GameDifficulty.HARD);
+                dialog.setTitle("Change Difficulty");
+                dialog.setHeaderText("Select a new difficulty");
+                dialog.setContentText("Difficulty:");
+                dialog.initOwner(gamePanel.getScene().getWindow());
+                dialog.showAndWait().ifPresent(selected -> {
+                    // recreate timeline with new delay and resume
+                    createTimeline(selected.getDropDelayMillis());
+                    updatePauseState(false);
+                });
+            });
+
+            Button returnBtn = new Button("Return To Main Menu");
+            returnBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-size: 14px; -fx-min-width: 180px;");
+            returnBtn.setOnAction(e -> {
+                try {
+                    if (timeLine != null) timeLine.stop();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainMenu.fxml"));
+                    Parent root = loader.load();
+                    Stage stage = (Stage) gamePanel.getScene().getWindow();
+                    Scene scene = new Scene(root, 800, 600);
+                    stage.setScene(scene);
+                    stage.show();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+
+            pauseBox.getChildren().addAll(pauseLabel, resumeBtn, changeDiffBtn, returnBtn);
+
+            groupNotification.getChildren().addAll(overlay, pauseBox);
             timeLine.pause();
         } else {
             groupNotification.getChildren().removeIf(node ->
-                    node.getId() != null && (node.getId().equals("pauseOverlay") || node.getId().equals("pauseLabel"))
+                    node.getId() != null && (node.getId().equals("pauseOverlay") || node.getId().equals("pauseMenuBox"))
             );
-            timeLine.play();
+            if (timeLine != null) timeLine.play();
         }
         isPause.setValue(isPaused);
     }
@@ -400,12 +478,6 @@ public class GuiController implements Initializable {
         final int ghostX = brick.getxPosition();
         int ghostY = brick.getyPosition();
 
-        // guard invalid values
-        if (ghostX < 0) {
-            ghostPanel.getChildren().clear();
-            return;
-        }
-
         // compute landing Y: increment while placing at (ghostX, ghostY+1) does NOT intersect
         while (!MatrixOperations.intersect(boardMatrix, shape, ghostX, ghostY + 1)) {
             ghostY++;
@@ -417,12 +489,18 @@ public class GuiController implements Initializable {
         for (int i = 0; i < shape.length; i++) {
             for (int j = 0; j < shape[i].length; j++) {
                 if (shape[i][j] != 0) {
-                    Rectangle rect = new Rectangle(BRICK_SIZE, BRICK_SIZE);
-                    rect.setFill(Color.web("#FFFFFF", 0.22)); // translucent shadow
-                    rect.setArcHeight(6);
-                    rect.setArcWidth(6);
-                    // place at the board column/row. Subtract VISIBLE_ROW_OFFSET for visible indexing.
-                    ghostPanel.add(rect, j + ghostX, i + ghostY - VISIBLE_ROW_OFFSET);
+                    int boardCol = j + ghostX;
+                    int boardRow = i + ghostY - VISIBLE_ROW_OFFSET;
+                    
+                    // Only draw the ghost block if it's within visible bounds
+                    if (boardCol >= 0 && boardCol < boardMatrix[0].length && 
+                        boardRow >= 0 && boardRow < boardMatrix.length - VISIBLE_ROW_OFFSET) {
+                        Rectangle rect = new Rectangle(BRICK_SIZE, BRICK_SIZE);
+                        rect.setFill(Color.web("#FFFFFF", 0.22)); // translucent shadow
+                        rect.setArcHeight(6);
+                        rect.setArcWidth(6);
+                        ghostPanel.add(rect, boardCol, boardRow);
+                    }
                 }
             }
         }
