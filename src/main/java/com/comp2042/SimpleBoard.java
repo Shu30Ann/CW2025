@@ -120,7 +120,6 @@ public class SimpleBoard implements Board {
         int[][] currentShape = brickRotator.getCurrentShape();
         PointInt ghostPos = getGhostPosition();
         
-        System.out.println("DEBUG SimpleBoard: Creating ViewData with ghost position: " + ghostPos);
 
         return new ViewData(
             currentShape,
@@ -182,8 +181,6 @@ public class SimpleBoard implements Board {
         }
 
         PointInt ghost = new PointInt(ghostX, ghostY);
-
-        System.out.println("Falling: " + currentOffset + ", Ghost: " + ghost);
 
         return ghost;
     }

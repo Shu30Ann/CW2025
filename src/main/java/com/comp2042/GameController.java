@@ -6,7 +6,7 @@ public class GameController implements InputEventListener {
     private final GuiController viewGuiController;
     private boolean isPaused;
     private GameDifficulty difficulty;
-
+    
     public GameController(GuiController c) {
         this(c, GameDifficulty.MEDIUM);
     }
