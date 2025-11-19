@@ -18,7 +18,6 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
@@ -40,11 +39,6 @@ import javafx.beans.binding.DoubleBinding;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-
-
-
 public class GuiController implements Initializable {
 
     private static final int BRICK_SIZE = 20;
@@ -60,10 +54,6 @@ public class GuiController implements Initializable {
     @FXML private GridPane nextShapePanel;
     @FXML private GridPane holdShapePanel;
     @FXML private GridPane ghostPanel;
-
-
-    private MediaPlayer bgmPlayer;
-    private MediaPlayer gameOverPlayer;
 
 
     private Rectangle[][] displayMatrix;
@@ -91,9 +81,7 @@ public class GuiController implements Initializable {
         gamePanel.setFocusTraversable(true);
         gamePanel.requestFocus();
 
-        playBackgroundMusic();
-        loadSoundEffects();
-
+        SoundManager.playBackgroundMusic();
 
         // Key handling
         gamePanel.setOnKeyPressed(new EventHandler<KeyEvent>() {
@@ -160,39 +148,6 @@ public class GuiController implements Initializable {
             }
         });
     }
-
-    private void playBackgroundMusic() {
-        URL resource = getClass().getResource("/backgroundMusic.mp3");
-        if (resource == null) {
-            System.out.println("❌ BGM file not found!");
-            return;
-        }
-
-        Media bgm = new Media(resource.toExternalForm());
-        bgmPlayer = new MediaPlayer(bgm);
-        bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        bgmPlayer.setVolume(0.5);
-        bgmPlayer.play();
-    }
-
-    private void loadSoundEffects() {
-
-        // Game over sound
-        URL gameOverURL = getClass().getResource("/gameOverMusic.mp3");
-        if (gameOverURL != null) {
-            try {
-                gameOverPlayer = new MediaPlayer(new Media(gameOverURL.toExternalForm()));
-                gameOverPlayer.setVolume(0.9);
-                System.out.println("✓ gameOverMusic.mp3 loaded successfully");
-            } catch (Exception e) {
-                System.out.println("❌ Failed to load gameOverMusic.mp3: " + e.getMessage());
-            }
-        } else {
-            System.out.println("❌ gameOverMusic.mp3 not found!");
-        }
-    }
-
-
 
     /**
      * Initialize the visible grid and the brick rectangles.
@@ -423,11 +378,8 @@ public class GuiController implements Initializable {
         gameOverPanel.setVisible(true);
         isGameOver.setValue(Boolean.TRUE);
 
-        if (bgmPlayer != null) bgmPlayer.stop();
-        if (gameOverPlayer != null) {
-            gameOverPlayer.stop();     // restart sound properly
-            gameOverPlayer.play();
-        }
+        SoundManager.stopBackgroundMusic();
+        SoundManager.playGameOverSound();
     }
 
 
@@ -447,6 +399,8 @@ public class GuiController implements Initializable {
         gameOverPanel.setVisible(false);
         eventListener.createNewGame();
         gamePanel.requestFocus();
+        // Restart background music when starting a new game
+        SoundManager.playBackgroundMusic();
         timeLine.play();
         isPause.setValue(Boolean.FALSE);
         isGameOver.setValue(Boolean.FALSE);

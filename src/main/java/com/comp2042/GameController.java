@@ -49,6 +49,9 @@ public class GameController implements InputEventListener {
             board.mergeBrickToBackground();
             clearRow = board.clearRows();
             if (clearRow.getLinesRemoved() > 0) {
+                // Play line clear sound effect
+                SoundManager.playLineClearSound();
+                
                 // Calculate score based on number of lines cleared and current combo
                 int baseScore = calculateLineScore(clearRow.getLinesRemoved());
                 board.getScore().add(baseScore);
@@ -153,6 +156,9 @@ public class GameController implements InputEventListener {
         // Clear completed rows
         ClearRow clearRow = board.clearRows();
         if (clearRow.getLinesRemoved() > 0) {
+            // Play line clear sound effect
+            SoundManager.playLineClearSound();
+            
             int baseScore = calculateLineScore(clearRow.getLinesRemoved());
             board.getScore().add(baseScore);
 
