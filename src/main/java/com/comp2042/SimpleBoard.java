@@ -165,6 +165,18 @@ public class SimpleBoard implements Board {
         );
     }
 
+    public ViewData getCurrentBrickViewData() {
+        int[][] shape = brickRotator.getCurrentShape(); // current brick shape
+        int x = currentOffset.getX(); // current X position
+        int y = currentOffset.getY(); // current Y position
+        int[][] nextShapeMatrix = nextBrick.getShapeMatrix().get(0); // for next brick preview
+        PointInt ghostPos = getGhostPosition(); // ghost brick position
+
+        return new ViewData(shape, x, y, nextShapeMatrix, ghostPos);
+    }
+
+
+
     public PointInt getGhostPosition() {
         int[][] matrix = MatrixOperations.copy(currentGameMatrix);
         int[][] shape = brickRotator.getCurrentShape();
@@ -185,7 +197,23 @@ public class SimpleBoard implements Board {
         return ghost;
     }
 
+    @Override
+    public void setCurrentBrick(Brick brick) {
+        brickRotator.setBrick(brick);
+        
+        // Center the brick horizontally on the board
+        int[][] shape = brickRotator.getCurrentShape();
+        int shapeWidth = shape[0].length;
+        int boardCols = currentGameMatrix[0].length;
+        int startX = Math.round((boardCols - shapeWidth) / 2.0f);
+        if (startX < 0) {
+            startX = 0;
+        }
+        currentOffset = new PointInt(startX, 0);
+    }
 
-
-
+    @Override
+    public Brick getCurrentBrick() {
+        return brickRotator.getBrick();
+    }
 }

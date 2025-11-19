@@ -1,5 +1,7 @@
 package com.comp2042;
 
+import com.comp2042.logic.bricks.Brick;
+
 public interface Board {
 
     boolean moveBrickDown();
@@ -25,4 +27,10 @@ public interface Board {
     void newGame();
 
     ViewData getNextBrickViewData();
+
+    ViewData getCurrentBrickViewData();
+
+    Brick getCurrentBrick();
+
+    void setCurrentBrick(Brick brick);
 }

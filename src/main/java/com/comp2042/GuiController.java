@@ -18,6 +18,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
@@ -55,7 +56,9 @@ public class GuiController implements Initializable {
     @FXML private GameOverPanel gameOverPanel;
     @FXML private Group gameCanvas;
     @FXML private StackPane nextBlockBox;
+    @FXML private StackPane holdBlockBox;
     @FXML private GridPane nextShapePanel;
+    @FXML private GridPane holdShapePanel;
     @FXML private GridPane ghostPanel;
 
 
@@ -112,6 +115,10 @@ public class GuiController implements Initializable {
                     }
                     else if (keyEvent.getCode() == KeyCode.SPACE) {
                         eventListener.hardDrop();
+                        keyEvent.consume();
+                    }
+                    else if (keyEvent.getCode() == KeyCode.H) {
+                        eventListener.holdCurrentBrick();
                         keyEvent.consume();
                     }
                 }
@@ -368,6 +375,47 @@ public class GuiController implements Initializable {
             }
         }
     }
+
+    public void showHoldShape(ViewData holdBrick) {
+        holdShapePanel.getChildren().clear();
+
+        if (holdBrick == null) return;
+
+        int[][] shape = holdBrick.getBrickData();
+        for (int i = 0; i < shape.length; i++) {
+            for (int j = 0; j < shape[i].length; j++) {
+                if (shape[i][j] != 0) {
+                    Rectangle rect = new Rectangle(BRICK_SIZE, BRICK_SIZE);
+                    rect.setFill(getFillColor(shape[i][j]));
+                    rect.setArcHeight(6);
+                    rect.setArcWidth(6);
+                    holdShapePanel.add(rect, j, i);
+                }
+            }
+        }
+    }
+
+    public void updateHoldDisplay(ViewData holdBrick) {
+        holdBlockBox.getChildren().clear(); // clear previous
+        if (holdBrick == null) return;
+
+        int[][] shape = holdBrick.getBrickData();
+        for (int i = 0; i < shape.length; i++) {
+            for (int j = 0; j < shape[i].length; j++) {
+                if (shape[i][j] != 0) {
+                    Rectangle rect = new Rectangle(BRICK_SIZE, BRICK_SIZE);
+                    rect.setFill(getFillColor(shape[i][j]));
+                    rect.setArcHeight(6);
+                    rect.setArcWidth(6);
+                    holdBlockBox.getChildren().add(rect);
+                    StackPane.setAlignment(rect, Pos.TOP_LEFT);
+                    rect.setTranslateX(j * BRICK_SIZE);
+                    rect.setTranslateY(i * BRICK_SIZE);
+                }
+            }
+        }
+    }
+
 
 
     public void gameOver() {

@@ -27,4 +27,6 @@ public interface InputEventListener {
 
     void hardDrop();
 
+    ViewData holdCurrentBrick();
+
 }

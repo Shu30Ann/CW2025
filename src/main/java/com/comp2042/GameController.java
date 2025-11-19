@@ -1,11 +1,15 @@
 package com.comp2042;
 
+import com.comp2042.logic.bricks.Brick;
+
 public class GameController implements InputEventListener {
 
     private Board board = new SimpleBoard(25, 10);
     private final GuiController viewGuiController;
     private boolean isPaused;
     private GameDifficulty difficulty;
+    private Brick holdBrickData = null;
+    private boolean canHold = true; 
     
     public GameController(GuiController c) {
         this(c, GameDifficulty.MEDIUM);
@@ -67,6 +71,9 @@ public class GameController implements InputEventListener {
                 viewGuiController.showNextShape(board.getNextBrickViewData());
             }
 
+            // Reset hold ability for the new falling brick
+            canHold = true;
+
             viewGuiController.refreshGameBackground(board.getBoardMatrix());
 
         }
@@ -90,6 +97,46 @@ public class GameController implements InputEventListener {
         board.rotateLeftBrick();
         return board.getViewData();
     }
+
+    @Override
+    public ViewData holdCurrentBrick() {
+        if (!canHold) return board.getViewData(); // can't hold twice in a row
+
+        // Get currently held brick or null if empty
+        Brick tempHold = holdBrickData; // save previous hold
+
+        // Get current brick before swapping
+        Brick currentBrick = board.getCurrentBrick();
+
+        // Store current brick in hold
+        holdBrickData = currentBrick;
+
+        // Swap with previously held brick or create new one
+        if (tempHold == null) {
+            // No previous hold, spawn new brick from queue
+            board.createNewBrick();
+        } else {
+            // Swap hold with current brick
+            board.setCurrentBrick(tempHold);
+        }
+
+        // IMPORTANT: Reset canHold to true so we can hold the NEW brick
+        // This allows continuous holding of pieces
+        canHold = true;
+        
+        // Update the hold display with the shape we stored
+        if (holdBrickData != null) {
+            int[][] shape = holdBrickData.getShapeMatrix().get(0);
+            ViewData holdDisplay = new ViewData(shape, 0, 0, shape);
+            viewGuiController.updateHoldDisplay(holdDisplay);
+        }
+        
+        // Update the next shape preview after hold
+        viewGuiController.showNextShape(board.getNextBrickViewData());
+        
+        return board.getViewData();
+    }
+
 
     public void hardDrop() {
         if (isPaused) return;
