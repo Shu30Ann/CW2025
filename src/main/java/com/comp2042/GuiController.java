@@ -54,12 +54,17 @@ public class GuiController implements Initializable {
     @FXML private GridPane nextShapePanel;
     @FXML private GridPane holdShapePanel;
     @FXML private GridPane ghostPanel;
+    @FXML private Label scoreLabel;
+    @FXML private Label linesLabel;
 
 
     private Rectangle[][] displayMatrix;
     private Rectangle[][] rectangles;
     private InputEventListener eventListener;
     private Timeline timeLine;
+    // pixel origin of the top-left cell inside the gamePanel (accounts for padding/border)
+    private double gridOriginX = 0;
+    private double gridOriginY = 0;
 
     private final BooleanProperty isPause = new SimpleBooleanProperty();
     private final BooleanProperty isGameOver = new SimpleBooleanProperty();
@@ -204,6 +209,21 @@ public class GuiController implements Initializable {
 
         // center and align brick after layout pass
         Platform.runLater(() -> {
+            // compute the pixel origin of the first visible cell so overlays align exactly
+            try {
+                Rectangle originRect = displayMatrix[VISIBLE_ROW_OFFSET][0];
+                gridOriginX = originRect.getBoundsInParent().getMinX();
+                gridOriginY = originRect.getBoundsInParent().getMinY();
+
+                // position overlay panes to match the inner grid origin
+                ghostPanel.setLayoutX(gridOriginX);
+                ghostPanel.setLayoutY(gridOriginY);
+                brickPanel.setLayoutX(gridOriginX);
+                brickPanel.setLayoutY(gridOriginY);
+            } catch (Exception ignored) {
+                gridOriginX = 0; gridOriginY = 0;
+            }
+
             centerGamePanel();
             refreshBrick(brick);
             gamePanel.requestFocus();
@@ -229,13 +249,9 @@ public class GuiController implements Initializable {
             double cellW = getCellWidth();
             double cellH = getCellHeight();
 
-            brickPanel.setLayoutX(
-                    gamePanel.getLayoutX() + brick.getxPosition() * cellW
-            );
-
-            brickPanel.setLayoutY(
-                    gamePanel.getLayoutY() + (brick.getyPosition() - VISIBLE_ROW_OFFSET) * cellH
-            );
+                // Use computed grid origin to align overlays with the actual grid cell positions
+                brickPanel.setLayoutX(gridOriginX + brick.getxPosition() * cellW);
+                brickPanel.setLayoutY(gridOriginY + (brick.getyPosition() - VISIBLE_ROW_OFFSET) * cellH);
 
             for (int i = 0; i < brick.getBrickData().length; i++) {
                 for (int j = 0; j < brick.getBrickData()[i].length; j++) {
@@ -305,13 +321,30 @@ public class GuiController implements Initializable {
     }
 
     public void bindScore(IntegerProperty scoreProperty) {
-        javafx.scene.control.Label scoreLabel = new javafx.scene.control.Label();
-        scoreLabel.textProperty().bind(scoreProperty.asString("Score: %d"));
-        scoreLabel.setTextFill(Color.WHITE);
-        scoreLabel.setFont(Font.font("Arial", 20));
-        scoreLabel.setLayoutX(300);
-        scoreLabel.setLayoutY(20);
-        groupNotification.getChildren().add(scoreLabel);
+        // Bind the provided score property to the score label in the side panel (if present)
+        if (scoreLabel != null) {
+            scoreLabel.textProperty().bind(scoreProperty.asString("%d"));
+            scoreLabel.setTextFill(Color.web("#ffd86b"));
+            scoreLabel.setFont(Font.font("Arial", 20));
+        } else {
+            // fallback: if side label not present, attach to notifications area (safe fallback)
+            javafx.scene.control.Label fallback = new javafx.scene.control.Label();
+            fallback.textProperty().bind(scoreProperty.asString("Score: %d"));
+            fallback.setTextFill(Color.WHITE);
+            fallback.setFont(Font.font("Arial", 20));
+            fallback.setLayoutX(300);
+            fallback.setLayoutY(20);
+            groupNotification.getChildren().add(fallback);
+        }
+    }
+
+    public void bindLinesCleared(IntegerProperty linesClearedProperty) {
+        // Bind the lines cleared property to the lines label in the side panel (if present)
+        if (linesLabel != null) {
+            linesLabel.textProperty().bind(linesClearedProperty.asString("%d"));
+            linesLabel.setTextFill(Color.web("#a0d8ff"));
+            linesLabel.setFont(Font.font("Arial", 14));
+        }
     }
 
     public void showNextShape(ViewData nextBrick) {
@@ -351,7 +384,8 @@ public class GuiController implements Initializable {
     }
 
     public void updateHoldDisplay(ViewData holdBrick) {
-        holdBlockBox.getChildren().clear(); // clear previous
+        // Use the inner GridPane so the preview is centered and aligned like the "next" preview
+        holdShapePanel.getChildren().clear(); // clear previous
         if (holdBrick == null) return;
 
         int[][] shape = holdBrick.getBrickData();
@@ -362,10 +396,7 @@ public class GuiController implements Initializable {
                     rect.setFill(getFillColor(shape[i][j]));
                     rect.setArcHeight(6);
                     rect.setArcWidth(6);
-                    holdBlockBox.getChildren().add(rect);
-                    StackPane.setAlignment(rect, Pos.TOP_LEFT);
-                    rect.setTranslateX(j * BRICK_SIZE);
-                    rect.setTranslateY(i * BRICK_SIZE);
+                    holdShapePanel.add(rect, j, i);
                 }
             }
         }

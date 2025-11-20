@@ -1,74 +1,70 @@
 .root {
-    -fx-background-image: url("background_image.png");
+    /* Subtle diagonal gradient background; fallback to solid color */
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #0f1720, #0f2630 40%, #112b38 100%);
+    -fx-font-family: "Segoe UI", "Helvetica", Arial;
 }
 
-.nextBrick {
-    -fx-border-width: 2px;
-    -fx-border-color: whitesmoke;
-    -fx-border-radius: 17px;
-}
-
-.gameBoard {
-    -fx-border-color: linear-gradient(#2A5058, #61a2b1);
-    -fx-border-width: 12px;
+/* Main center card containing the game area */
+.board-card {
+    -fx-background-color: linear-gradient(#0f2430, #132c36);
     -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.65), 24, 0.0, 0, 8);
 }
 
-.nextBrickLabel {
-    -fx-font-family: "Let's go Digital";
-    -fx-padding: 20px 0 0 0;
-    -fx-font-size: 16px;
-    -fx-text-fill: yellow;
+/* The actual grid game area appearance */
+.gameBoard {
+    -fx-background-color: linear-gradient(#071425, #0d2b33);
+    -fx-border-color: rgba(255,255,255,0.06);
+    -fx-border-width: 6px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px;
 }
 
-.ipad-dark-grey {
-    -fx-background-color: linear-gradient(#686868 0%, #232723 25%, #373837 75%, #757575 100%),
-    linear-gradient(#020b02, #3a3a3a),
-    linear-gradient(#9d9e9d 0%, #6b6a6b 20%, #343534 80%, #242424 100%),
-    linear-gradient(#8a8a8a 0%, #6b6a6b 20%, #343534 80%, #262626 100%),
-    linear-gradient(#777777 0%, #606060 50%, #505250 51%, #2a2b2a 100%);
-    -fx-background-insets: 0, 1, 4, 5, 6;
-    -fx-background-radius: 9, 8, 5, 4, 3;
-    -fx-padding: 8;
-    /*-fx-font-family: "Helvetica";*/
-    -fx-font-family: "Let's go Digital";
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-effect: dropshadow(three-pass-box, rgba(255, 255, 255, 0.2), 1, 0.0, 0, 1);
+/* Side information panel styling */
+.side-panel {
+    -fx-spacing: 14px;
+    -fx-alignment: top_center;
 }
 
-.rectangleStyle {
-    -fx-fill: linear-gradient(from 41px 34px to 50px 50px, reflect, #ff7f50 30%, #faebd7 47%);
+.info-card {
+    -fx-background-color: linear-gradient(#0e2a33, rgba(255,255,255,0.02));
+    -fx-background-radius: 10px;
+    -fx-padding: 10px 14px;
+    -fx-border-radius: 10px;
+    -fx-border-color: rgba(255,255,255,0.04);
+    -fx-border-width: 1px;
 }
 
-.vbox {
-    -fx-spacing: 12;
+.label-title {
+    -fx-text-fill: #d9f1ff;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
 }
 
-.helpInfo {
-    -fx-fill: white;
-    -fx-alignment: center-left;
-    -fx-text-alignment: left;
-    -fx-font-size: 10px;
+.value-large {
+    -fx-text-fill: #ffd86b;
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
 }
 
-.bonusStyle {
-    -fx-font-size: 40px;
-    -fx-font-weight: bold;
+.small-muted {
+    -fx-text-fill: rgba(255,255,255,0.7);
+    -fx-font-size: 12px;
 }
 
-.gameOverStyle {
-    -fx-font-family: "Let's go Digital";
-    -fx-font-size: 48;
-    -fx-background-color: red;
+.nextBrick, .holdBrick, .preview-grid {
+    -fx-border-width: 2px;
+    -fx-border-color: rgba(255,255,255,0.08);
+    -fx-border-radius: 8px;
+    -fx-background-color: rgba(0,0,0,0.18);
 }
 
-.scoreClass{
-    -fx-font-family: "Let's go Digital";
-    -fx-font-size: 38;
-    -fx-fill: yellow;
-    -fx-text-fill: yellow;
+.game-over-overlay {
+    -fx-background-color: rgba(0,0,0,0.6);
+    -fx-alignment: center;
 }
 
 /* Pause menu styling */
@@ -80,13 +76,7 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 12, 0.0, 0, 6);
 }
 
-.pauseBox > .label {
-    -fx-font-family: "Let's go Digital";
-    -fx-font-size: 30px;
-    -fx-text-fill: white;
-}
-
-.pauseBox > .button {
-    -fx-font-size: 14px;
-    -fx-padding: 8px 12px;
-}
+/* small helpers */
+.centered { -fx-alignment: center; }
+.muted { -fx-text-fill: rgba(255,255,255,0.65); }
+.cta-button { -fx-background-color: linear-gradient(#4aa3c6, #2b8fb0); -fx-text-fill: white; -fx-padding: 8 12 8 12; -fx-background-radius: 6px; }

@@ -23,6 +23,7 @@ public class GameController implements InputEventListener {
         viewGuiController.setEventListener(this);
         viewGuiController.initGameView(board.getBoardMatrix(), board.getViewData(), difficulty);
         viewGuiController.bindScore(board.getScore().scoreProperty());
+        viewGuiController.bindLinesCleared(board.getScore().linesClearedProperty());
     }
 
     public void togglePause() {
@@ -55,6 +56,7 @@ public class GameController implements InputEventListener {
                 // Calculate score based on number of lines cleared and current combo
                 int baseScore = calculateLineScore(clearRow.getLinesRemoved());
                 board.getScore().add(baseScore);
+                board.getScore().addLinesCleared(clearRow.getLinesRemoved());
                 
                 // Handle combo
                 board.getScore().addCombo();
@@ -161,6 +163,7 @@ public class GameController implements InputEventListener {
             
             int baseScore = calculateLineScore(clearRow.getLinesRemoved());
             board.getScore().add(baseScore);
+            board.getScore().addLinesCleared(clearRow.getLinesRemoved());
 
             board.getScore().addCombo();
             if (board.getScore().comboProperty().get() > 1) {

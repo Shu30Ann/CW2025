@@ -7,6 +7,7 @@ public final class Score {
 
     private final IntegerProperty score = new SimpleIntegerProperty(0);
     private final IntegerProperty combo = new SimpleIntegerProperty(0);
+    private final IntegerProperty linesCleared = new SimpleIntegerProperty(0);
     private final IntegerProperty highScore = new SimpleIntegerProperty(0);
 
     public IntegerProperty scoreProperty() {
@@ -15,6 +16,10 @@ public final class Score {
 
     public IntegerProperty comboProperty() {
         return combo;
+    }
+
+    public IntegerProperty linesClearedProperty() {
+        return linesCleared;
     }
 
     public IntegerProperty highScoreProperty() {
@@ -39,8 +44,13 @@ public final class Score {
         combo.setValue(0);
     }
 
+    public void addLinesCleared(int lines) {
+        linesCleared.setValue(linesCleared.getValue() + lines);
+    }
+
     public void reset() {
         score.setValue(0);
         combo.setValue(0);
+        linesCleared.setValue(0);
     }
 }

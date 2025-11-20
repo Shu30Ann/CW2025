@@ -8,6 +8,7 @@ import com.comp2042.PointInt;
 
 public class SimpleBoard implements Board {
 
+    // width = number of columns, height = number of rows
     private final int width;
     private final int height;
     private final BrickGenerator brickGenerator;
@@ -18,10 +19,14 @@ public class SimpleBoard implements Board {
     private Brick nextBrick;
 
 
-    public SimpleBoard(int width, int height) {
-        this.width = width;
-        this.height = height;
-        currentGameMatrix = new int[width][height];
+    // Constructor arguments are passed as (rows, cols) by callers (e.g. new SimpleBoard(25, 10)).
+    // Internally we want currentGameMatrix[row][col] so interpret the first arg as rows (height)
+    // and the second as cols (width).
+    public SimpleBoard(int rows, int cols) {
+        this.width = cols;
+        this.height = rows;
+        // matrix indexed as [rows][cols]
+        currentGameMatrix = new int[height][width];
         brickGenerator = new RandomBrickGenerator();
         nextBrick = brickGenerator.getBrick();
         brickRotator = new BrickRotator();
@@ -152,7 +157,8 @@ public class SimpleBoard implements Board {
 
     @Override
     public void newGame() {
-        currentGameMatrix = new int[width][height];
+        // ensure matrix dimensions are [rows][cols]
+        currentGameMatrix = new int[height][width];
         score.reset();
         createNewBrick();
     }
