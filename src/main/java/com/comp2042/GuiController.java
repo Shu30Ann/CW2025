@@ -380,6 +380,20 @@ public class GuiController implements Initializable {
 
         SoundManager.stopBackgroundMusic();
         SoundManager.playGameOverSound();
+        
+        // Save the final score to high score manager
+        HighScoreManager highScoreManager = new HighScoreManager();
+        int finalScore = eventListener.getScore().scoreProperty().get();
+        boolean isNewHighScore = highScoreManager.addScore(finalScore);
+        
+        // Optionally show notification if it's a new high score
+        if (isNewHighScore) {
+            Label highScoreLabel = new Label("NEW HIGH SCORE!");
+            highScoreLabel.setTextFill(Color.GOLD);
+            highScoreLabel.setFont(Font.font("Arial", 24));
+            highScoreLabel.setStyle("-fx-font-weight: bold;");
+            groupNotification.getChildren().add(highScoreLabel);
+        }
     }
 
 

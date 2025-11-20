@@ -33,8 +33,17 @@ public class MainMenuController {
 
     @FXML
     private void showHighScores() {
-        // TODO: Implement high scores view
-        showInfo("High Scores feature coming soon!");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/highScores.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 800, 600);
+
+            Stage stage = (Stage) menuRoot.getScene().getWindow();
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            showError("Error loading high scores: " + e.getMessage());
+        }
     }
 
     @FXML
