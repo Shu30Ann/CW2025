@@ -48,8 +48,22 @@ public class MainMenuController {
 
     @FXML
     private void showSettings() {
-        // TODO: Implement settings view
-        showInfo("Settings feature coming soon!");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/settings.fxml"));
+            Parent root = loader.load();
+
+            SettingsController settingsController = loader.getController();
+            // Return to current menu after save
+            Scene previousScene = menuRoot.getScene();
+            settingsController.setReturnScene(previousScene);
+
+            Scene scene = new Scene(root, 800, 600);
+            Stage stage = (Stage) previousScene.getWindow();
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            showError("Error loading settings: " + e.getMessage());
+        }
     }
 
     @FXML

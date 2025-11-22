@@ -24,6 +24,9 @@ public class HighScoresController {
     private VBox highScoresContainer;
 
     private HighScoreManager highScoreManager;
+    private Scene returnScene;
+    private Runnable onBack;
+    private Button backButton;
 
     @FXML
     public void initialize() {
@@ -70,27 +73,44 @@ public class HighScoresController {
         spacer.setPrefHeight(40);
         highScoresContainer.getChildren().add(spacer);
 
-        // Back button
-        Button backButton = new Button("Back To Main Menu");
-        backButton.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-size: 18px; -fx-min-width: 220px; -fx-padding: 10px;");
-        backButton.setOnAction(e -> backToMainMenu());
+        // Single back button that returns to where the user came from
+        backButton = new Button("Back");
+        backButton.getStyleClass().addAll("menu-button", "orange");
+        backButton.setPrefWidth(240);
+        backButton.setOnAction(e -> handleBack());
         highScoresContainer.getChildren().add(backButton);
     }
 
-    /**
-     * Return to the main menu.
-     */
-    @FXML
-    private void backToMainMenu() {
+    private void handleBack() {
+        Stage stage = (Stage) highScoresContainer.getScene().getWindow();
+        if (returnScene != null) {
+            stage.setScene(returnScene);
+            stage.show();
+            if (onBack != null) {
+                onBack.run();
+            }
+            return;
+        }
+        // Default: go back to main menu if no return scene was provided
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainMenu.fxml"));
             Parent root = loader.load();
-            Stage stage = (Stage) highScoresContainer.getScene().getWindow();
             Scene scene = new Scene(root, 800, 600);
             stage.setScene(scene);
             stage.show();
         } catch (IOException e) {
             System.err.println("Error loading main menu: " + e.getMessage());
         }
+    }
+
+    public void setReturnScene(Scene scene) {
+        this.returnScene = scene;
+        if (backButton != null) {
+            backButton.setText("Back");
+        }
+    }
+
+    public void setOnBack(Runnable onBack) {
+        this.onBack = onBack;
     }
 }

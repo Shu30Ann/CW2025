@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="rootPane"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="com.comp2042.PauseMenuController"
+          stylesheets="@window_style.css"
+          styleClass="menu-overlay">
+
+    <VBox fx:id="pauseBox"
+          alignment="CENTER"
+          spacing="14"
+          styleClass="menu-card menu-compact">
+
+        <Label text="PAUSED"
+               styleClass="menu-title"/>
+
+        <Button fx:id="resumeBtn"
+                text="Resume"
+                prefWidth="220"
+                styleClass="menu-button"/>
+
+        <Button fx:id="mainMenuBtn"
+                text="Return to Main Menu"
+                prefWidth="220"
+                styleClass="menu-button purple"/>
+
+        <Button fx:id="highScoresBtn"
+                text="High Scores"
+                prefWidth="220"
+                styleClass="menu-button blue"/>
+
+        <Button fx:id="settingsBtn"
+                text="Settings"
+                prefWidth="220"
+                styleClass="menu-button orange"/>
+        
+
+    </VBox>
+
+</StackPane>

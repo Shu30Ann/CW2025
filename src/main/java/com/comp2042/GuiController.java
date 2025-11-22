@@ -68,6 +68,9 @@ public class GuiController implements Initializable {
 
     private final BooleanProperty isPause = new SimpleBooleanProperty();
     private final BooleanProperty isGameOver = new SimpleBooleanProperty();
+    private StackPane pauseMenuRoot;
+    private PauseMenuController pauseMenuController;
+    private GameDifficulty currentDifficulty;
 
     private double getCellHeight() { return BRICK_SIZE + gamePanel.getVgap(); }
     private double getCellWidth()  { return BRICK_SIZE + gamePanel.getHgap(); }
@@ -160,6 +163,7 @@ public class GuiController implements Initializable {
      * brick: current ViewData (brick shape + position)
      */
     public void initGameView(int[][] boardMatrix, ViewData brick, GameDifficulty difficulty) {
+        this.currentDifficulty = difficulty;
         // set the preferred size of gamePanel (so centering works)
         double panelW = getGamePanelPixelWidth(boardMatrix);
         double panelH = getGamePanelPixelHeight(boardMatrix);
@@ -456,81 +460,49 @@ public class GuiController implements Initializable {
         gamePanel.requestFocus();
     }
 
-    public void updatePauseState(boolean isPaused) {
-        if (isPaused) {
-                Rectangle overlay = new Rectangle();
-                overlay.widthProperty().bind(gamePanel.widthProperty());
-                overlay.heightProperty().bind(gamePanel.heightProperty());
-            overlay.setFill(Color.BLACK);
-            overlay.setOpacity(0.65);
-            overlay.setId("pauseOverlay");
-
-            // Pause menu box
-            VBox pauseBox = new VBox(14);
-            pauseBox.setAlignment(Pos.CENTER);
-            pauseBox.getStyleClass().add("pauseBox");
-            pauseBox.setId("pauseMenuBox");
-
-                // position overlay and pauseBox relative to the gamePanel inside groupNotification
-                overlay.layoutXProperty().bind(gamePanel.layoutXProperty().subtract(groupNotification.layoutXProperty()));
-                overlay.layoutYProperty().bind(gamePanel.layoutYProperty().subtract(groupNotification.layoutYProperty()));
-
-                pauseBox.layoutXProperty().bind(gamePanel.layoutXProperty().subtract(groupNotification.layoutXProperty()).add(
-                    gamePanel.widthProperty().subtract(pauseBox.widthProperty()).divide(2)));
-                pauseBox.layoutYProperty().bind(gamePanel.layoutYProperty().subtract(groupNotification.layoutYProperty()).add(
-                    gamePanel.heightProperty().subtract(pauseBox.heightProperty()).divide(2)));
-
-            Label pauseLabel = new Label("PAUSED");
-            pauseLabel.setTextFill(Color.WHITE);
-            pauseLabel.setFont(Font.font("Arial", 36));
-
-            Button resumeBtn = new Button("Resume");
-            resumeBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-min-width: 160px;");
-            resumeBtn.setOnAction(e -> updatePauseState(false));
-
-            Button changeDiffBtn = new Button("Change Difficulty");
-            changeDiffBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px; -fx-min-width: 180px;");
-            changeDiffBtn.setOnAction(e -> {
-                ChoiceDialog<GameDifficulty> dialog = new ChoiceDialog<>(GameDifficulty.MEDIUM, GameDifficulty.EASY, GameDifficulty.MEDIUM, GameDifficulty.HARD);
-                dialog.setTitle("Change Difficulty");
-                dialog.setHeaderText("Select a new difficulty");
-                dialog.setContentText("Difficulty:");
-                dialog.initOwner(gamePanel.getScene().getWindow());
-                dialog.showAndWait().ifPresent(selected -> {
-                    // recreate timeline with new delay and resume
-                    createTimeline(selected.getDropDelayMillis());
-                    updatePauseState(false);
-                });
-            });
-
-            Button returnBtn = new Button("Return To Main Menu");
-            returnBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-size: 14px; -fx-min-width: 180px;");
-            returnBtn.setOnAction(e -> {
+    public void updatePauseState(boolean paused) {
+        if (paused) {
+            if (pauseMenuRoot == null) {
                 try {
-                    if (timeLine != null) timeLine.stop();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainMenu.fxml"));
-                    Parent root = loader.load();
-                    Stage stage = (Stage) gamePanel.getScene().getWindow();
-                    Scene scene = new Scene(root, 800, 600);
-                    stage.setScene(scene);
-                    stage.show();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/pauseMenu.fxml"));
+                    pauseMenuRoot = loader.load();
+                    pauseMenuController = loader.getController();
+                    pauseMenuController.setGuiController(this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return;
                 }
-            });
+            }
 
-            pauseBox.getChildren().addAll(pauseLabel, resumeBtn, changeDiffBtn, returnBtn);
+            if (!groupNotification.getChildren().contains(pauseMenuRoot)) {
+                groupNotification.getChildren().add(pauseMenuRoot);
+            }
 
-            groupNotification.getChildren().addAll(overlay, pauseBox);
             timeLine.pause();
+            isPause.set(true);
+
         } else {
-            groupNotification.getChildren().removeIf(node ->
-                    node.getId() != null && (node.getId().equals("pauseOverlay") || node.getId().equals("pauseMenuBox"))
-            );
-            if (timeLine != null) timeLine.play();
+            groupNotification.getChildren().remove(pauseMenuRoot);
+            timeLine.play();
+            isPause.set(false);
         }
-        isPause.setValue(isPaused);
+
+        gamePanel.requestFocus();
     }
+
+    public void stopGameLoop() {
+        if (timeLine != null) {
+            try {
+                timeLine.stop();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    public void changeGameDifficulty(GameDifficulty difficulty) {
+        this.currentDifficulty = difficulty;
+        createTimeline(difficulty.getDropDelayMillis());
+    }
+
 
     private void centerGamePanel() {
         if (gamePanel.getScene() == null) return;

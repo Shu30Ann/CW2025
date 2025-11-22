@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.comp2042.SettingsController"
+           prefHeight="600.0" prefWidth="800.0"
+           style="-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #0f1720, #0f2630 40%, #112b38 100%);">
+
+    <VBox alignment="CENTER" spacing="18">
+        <padding>
+            <Insets top="30" right="30" bottom="30" left="30"/>
+        </padding>
+
+        <Label text="Settings"
+               style="-fx-text-fill: white; -fx-font-size: 42px; -fx-font-weight: bold;"/>
+
+        <VBox spacing="14"
+              maxWidth="360"
+              style="-fx-background-color: rgba(0,0,0,0.45); -fx-padding: 22; -fx-background-radius: 14;">
+
+            <Label text="Music Volume"
+                   style="-fx-text-fill: #d9f1ff; -fx-font-size: 16px;"/>
+            <Slider fx:id="musicSlider"
+                    min="0" max="1" blockIncrement="0.05"
+                    showTickMarks="true" showTickLabels="true"
+                    majorTickUnit="0.25" minorTickCount="1"
+                    prefWidth="320"/>
+
+            <Label text="Sound Effects Volume"
+                   style="-fx-text-fill: #d9f1ff; -fx-font-size: 16px;"/>
+            <Slider fx:id="sfxSlider"
+                    min="0" max="1" blockIncrement="0.05"
+                    showTickMarks="true" showTickLabels="true"
+                    majorTickUnit="0.25" minorTickCount="1"
+                    prefWidth="320"/>
+
+            <Button fx:id="saveButton"
+                    text="Save"
+                    onAction="#saveSettings"
+                    prefWidth="200"
+                    style="-fx-background-color: linear-gradient(#4CAF50, #3f9e48); -fx-text-fill: white; -fx-font-size: 18px; -fx-background-radius: 8; -fx-padding: 10 16 10 16;"/>
+        </VBox>
+    </VBox>
+</StackPane>
