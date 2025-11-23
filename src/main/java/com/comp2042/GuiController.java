@@ -1,6 +1,9 @@
 package com.comp2042;
 
 import javafx.animation.KeyFrame;
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -37,6 +40,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class GuiController implements Initializable {
@@ -290,24 +294,11 @@ public class GuiController implements Initializable {
         if (isPause.getValue() == Boolean.FALSE) {
             DownData downData = eventListener.onDownEvent(event);
             if (downData.getClearRow() != null && downData.getClearRow().getLinesRemoved() > 0) {
-                int scoreToShow = getScoreForLines(downData.getClearRow().getLinesRemoved());
-                boolean isCombo = isPreviousLineCleared();
-                String scoreText = "+" + scoreToShow;
-                if (isCombo) {
-                    scoreText += " x2";
-                    scoreToShow *= 2;
-                }
-                NotificationPanel notificationPanel = new NotificationPanel(scoreText);
-                groupNotification.getChildren().add(notificationPanel);
-                notificationPanel.showScore(groupNotification.getChildren());
+                showLineClearPopup(downData.getClearRow());
             }
             refreshBrick(downData.getViewData());
         }
         gamePanel.requestFocus();
-    }
-
-    private boolean isPreviousLineCleared() {
-        return eventListener.getScore().comboProperty().get() > 1;
     }
 
     private int getScoreForLines(int lines) {
@@ -318,6 +309,65 @@ public class GuiController implements Initializable {
             case 4: return 800;
             default: return 0;
         }
+    }
+
+    private String buildPopupText(int lines) {
+        int score = getScoreForLines(lines);
+        if (lines <= 1) {
+            return "+" + score;
+        }
+        return "Combo! +" + score;
+    }
+
+    public void showLineClearPopup(ClearRow clearRow) {
+        if (clearRow == null || clearRow.getLinesRemoved() == 0) {
+            return;
+        }
+
+        int[][] boardMatrix = eventListener.getBoardMatrix();
+        if (boardMatrix == null || boardMatrix.length == 0 || boardMatrix[0].length == 0) {
+            return;
+        }
+
+        List<Integer> clearedRows = clearRow.getClearedRows();
+        int anchorRow = clearedRows.stream()
+                .mapToInt(Integer::intValue)
+                .max()
+                .orElse(boardMatrix.length - 1);
+        anchorRow = Math.min(Math.max(anchorRow, VISIBLE_ROW_OFFSET), boardMatrix.length - 1);
+
+        double cellW = getCellWidth();
+        double cellH = getCellHeight();
+
+        double layoutX = gridOriginX + (boardMatrix[0].length * cellW) / 2.0;
+        double layoutY = gridOriginY + ((anchorRow - VISIBLE_ROW_OFFSET) + 0.5) * cellH;
+
+        Label popup = new Label(buildPopupText(clearRow.getLinesRemoved()));
+        popup.getStyleClass().add("line-clear-popup");
+        if (clearRow.getLinesRemoved() > 1) {
+            popup.getStyleClass().add("combo");
+        }
+        popup.setMouseTransparent(true);
+        popup.setLayoutX(layoutX);
+        popup.setLayoutY(layoutY);
+
+        popup.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
+            popup.setTranslateX(-newBounds.getWidth() / 2.0);
+            popup.setTranslateY(-newBounds.getHeight() / 2.0);
+        });
+
+        FadeTransition fade = new FadeTransition(Duration.millis(1400), popup);
+        fade.setFromValue(1);
+        fade.setToValue(0);
+
+        TranslateTransition slide = new TranslateTransition(Duration.millis(1400), popup);
+        slide.setByY(-28);
+
+        ParallelTransition animation = new ParallelTransition(fade, slide);
+        animation.setOnFinished(e -> groupNotification.getChildren().remove(popup));
+
+        groupNotification.getChildren().add(popup);
+        animation.play();
     }
 
     public void setEventListener(InputEventListener eventListener) {
@@ -420,14 +470,11 @@ public class GuiController implements Initializable {
         HighScoreManager highScoreManager = new HighScoreManager();
         int finalScore = eventListener.getScore().scoreProperty().get();
         boolean isNewHighScore = highScoreManager.addScore(finalScore);
-        
-        // Optionally show notification if it's a new high score
+
         if (isNewHighScore) {
-            Label highScoreLabel = new Label("NEW HIGH SCORE!");
-            highScoreLabel.setTextFill(Color.GOLD);
-            highScoreLabel.setFont(Font.font("Arial", 24));
-            highScoreLabel.setStyle("-fx-font-weight: bold;");
-            groupNotification.getChildren().add(highScoreLabel);
+            gameOverPanel.showNewHighScore();
+        } else {
+            gameOverPanel.hideNewHighScore();
         }
     }
 
@@ -453,6 +500,7 @@ public class GuiController implements Initializable {
         timeLine.play();
         isPause.setValue(Boolean.FALSE);
         isGameOver.setValue(Boolean.FALSE);
+        gameOverPanel.hideNewHighScore();
     }
 
     public void pauseGame(ActionEvent actionEvent) {

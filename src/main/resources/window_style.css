@@ -170,3 +170,33 @@
     -fx-background-color: linear-gradient(#0b1118, #05080d);
     -fx-border-color: rgba(255,255,255,0.08);
 }
+
+/* Floating score popup when clearing lines */
+.line-clear-popup {
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #ffe9a5;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.65), 12, 0, 0, 4);
+}
+
+.line-clear-popup.combo {
+    -fx-text-fill: #7cf5ff;
+    -fx-font-size: 26px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 255, 0.5), 16, 0, 0, 6);
+}
+
+/* Game over banner */
+.gameOverStyle {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 64px;
+    -fx-font-weight: 900;
+    -fx-letter-spacing: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 18, 0, 0, 4);
+}
+
+.highScoreBanner {
+    -fx-text-fill: #ffd86b;
+    -fx-font-size: 26px;
+    -fx-font-weight: 800;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 14, 0, 0, 3);
+}

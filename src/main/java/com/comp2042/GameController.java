@@ -169,6 +169,7 @@ public class GameController implements InputEventListener {
             if (board.getScore().comboProperty().get() > 1) {
                 board.getScore().add(baseScore);
             }
+            viewGuiController.showLineClearPopup(clearRow);
         } else {
             board.getScore().resetCombo();
         }
