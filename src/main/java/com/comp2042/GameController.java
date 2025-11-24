@@ -10,6 +10,8 @@ public class GameController implements InputEventListener {
     private GameDifficulty difficulty;
     private Brick holdBrickData = null;
     private boolean canHold = true; 
+    private Long lockStartTime = null;
+    private static final long LOCK_DELAY_MILLIS = 500L;
     
     public GameController(GuiController c) {
         this(c, GameDifficulty.MEDIUM);
@@ -46,60 +48,42 @@ public class GameController implements InputEventListener {
         }
         boolean canMove = board.moveBrickDown();
         ClearRow clearRow = null;
-        if (!canMove) {
-            board.mergeBrickToBackground();
-            clearRow = board.clearRows();
-            if (clearRow.getLinesRemoved() > 0) {
-                // Play line clear sound effect
-                SoundManager.playLineClearSound();
-                
-                // Calculate score based on number of lines cleared and current combo
-                int baseScore = calculateLineScore(clearRow.getLinesRemoved());
-                board.getScore().add(baseScore);
-                board.getScore().addLinesCleared(clearRow.getLinesRemoved());
-                
-                // Handle combo
-                board.getScore().addCombo();
-                if (board.getScore().comboProperty().get() > 1) {
-                    // Double the score for combos
-                    board.getScore().add(baseScore);
-                }
-            } else {
-                board.getScore().resetCombo();
+        long now = System.currentTimeMillis();
+
+        if (canMove) {
+            lockStartTime = null;
+        } else {
+            if (lockStartTime == null) {
+                lockStartTime = now;
             }
-
-            boolean isCollision = board.createNewBrick();
-            if (isCollision) {
-                viewGuiController.gameOver();
-            } else {
-                // Update the next shape preview
-                viewGuiController.showNextShape(board.getNextBrickViewData());
+            if (now - lockStartTime >= LOCK_DELAY_MILLIS) {
+                clearRow = lockCurrentPiece();
             }
-
-            // Reset hold ability for the new falling brick
-            canHold = true;
-
-            viewGuiController.refreshGameBackground(board.getBoardMatrix());
-
         }
         return new DownData(clearRow, board.getViewData());
     }
 
     @Override
     public ViewData onLeftEvent(MoveEvent event) {
-        board.moveBrickLeft();
+        if (board.moveBrickLeft()) {
+            restartLockDelayIfGrounded();
+        }
         return board.getViewData();
     }
 
     @Override
     public ViewData onRightEvent(MoveEvent event) {
-        board.moveBrickRight();
+        if (board.moveBrickRight()) {
+            restartLockDelayIfGrounded();
+        }
         return board.getViewData();
     }
 
     @Override
     public ViewData onRotateEvent(MoveEvent event) {
-        board.rotateLeftBrick();
+        if (board.rotateLeftBrick()) {
+            restartLockDelayIfGrounded();
+        }
         return board.getViewData();
     }
 
@@ -128,6 +112,7 @@ public class GameController implements InputEventListener {
         // IMPORTANT: Reset canHold to true so we can hold the NEW brick
         // This allows continuous holding of pieces
         canHold = true;
+        lockStartTime = null;
         
         // Update the hold display with the shape we stored
         if (holdBrickData != null) {
@@ -153,43 +138,18 @@ public class GameController implements InputEventListener {
         }
 
         // The brick stops -> lock it
-        board.mergeBrickToBackground();
-
-        // Clear completed rows
-        ClearRow clearRow = board.clearRows();
-        if (clearRow.getLinesRemoved() > 0) {
-            // Play line clear sound effect
-            SoundManager.playLineClearSound();
-            
-            int baseScore = calculateLineScore(clearRow.getLinesRemoved());
-            board.getScore().add(baseScore);
-            board.getScore().addLinesCleared(clearRow.getLinesRemoved());
-
-            board.getScore().addCombo();
-            if (board.getScore().comboProperty().get() > 1) {
-                board.getScore().add(baseScore);
-            }
+        ClearRow clearRow = lockCurrentPiece();
+        if (clearRow != null && clearRow.getLinesRemoved() > 0) {
             viewGuiController.showLineClearPopup(clearRow);
-        } else {
-            board.getScore().resetCombo();
         }
-
-        // Spawn the next brick
-        boolean isCollision = board.createNewBrick();
-        if (isCollision) {
-            viewGuiController.gameOver();
-            return;
-        }
-
-        // Update panels
-        viewGuiController.showNextShape(board.getNextBrickViewData());
-        viewGuiController.refreshGameBackground(board.getBoardMatrix());
+        lockStartTime = null;
     }
 
 
     @Override
     public void createNewGame() {
         board.newGame();
+        lockStartTime = null;
         viewGuiController.refreshGameBackground(board.getBoardMatrix());
     }
 
@@ -213,6 +173,49 @@ public class GameController implements InputEventListener {
             case 3: return 500;
             case 4: return 800;
             default: return 0;
+        }
+    }
+
+    private ClearRow lockCurrentPiece() {
+        board.mergeBrickToBackground();
+        ClearRow clearRow = board.clearRows();
+        applyScoring(clearRow);
+
+        boolean isCollision = board.createNewBrick();
+        if (isCollision) {
+            viewGuiController.gameOver();
+        } else {
+            viewGuiController.showNextShape(board.getNextBrickViewData());
+        }
+
+        canHold = true;
+        lockStartTime = null;
+        viewGuiController.refreshGameBackground(board.getBoardMatrix());
+        return clearRow;
+    }
+
+    private void applyScoring(ClearRow clearRow) {
+        if (clearRow.getLinesRemoved() > 0) {
+            SoundManager.playLineClearSound();
+
+            int baseScore = calculateLineScore(clearRow.getLinesRemoved());
+            board.getScore().add(baseScore);
+            board.getScore().addLinesCleared(clearRow.getLinesRemoved());
+
+            board.getScore().addCombo();
+            if (board.getScore().comboProperty().get() > 1) {
+                board.getScore().add(baseScore);
+            }
+        } else {
+            board.getScore().resetCombo();
+        }
+    }
+
+    private void restartLockDelayIfGrounded() {
+        if (board.isBrickGrounded()) {
+            lockStartTime = System.currentTimeMillis();
+        } else {
+            lockStartTime = null;
         }
     }
 }

@@ -33,4 +33,6 @@ public interface Board {
     Brick getCurrentBrick();
 
     void setCurrentBrick(Brick brick);
+
+    boolean isBrickGrounded();
 }

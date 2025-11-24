@@ -16,6 +16,24 @@ final class OBrick implements Brick {
                 {0, 4, 4, 0},
                 {0, 0, 0, 0}
         });
+        brickMatrix.add(new int[][]{
+                {0, 0, 0, 0},
+                {0, 4, 4, 0},
+                {0, 4, 4, 0},
+                {0, 0, 0, 0}
+        });
+        brickMatrix.add(new int[][]{
+                {0, 0, 0, 0},
+                {0, 4, 4, 0},
+                {0, 4, 4, 0},
+                {0, 0, 0, 0}
+        });
+        brickMatrix.add(new int[][]{
+                {0, 0, 0, 0},
+                {0, 4, 4, 0},
+                {0, 4, 4, 0},
+                {0, 0, 0, 0}
+        });
     }
 
     @Override
