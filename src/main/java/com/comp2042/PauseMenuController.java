@@ -15,6 +15,7 @@ public class PauseMenuController {
     @FXML private Button resumeBtn;
     @FXML private Button mainMenuBtn;
     @FXML private Button highScoresBtn;
+    @FXML private Button difficultyBtn;
     @FXML private Button settingsBtn;
 
     private GuiController guiController; // parent reference
@@ -28,6 +29,7 @@ public class PauseMenuController {
 
         mainMenuBtn.setOnAction(e -> navigateTo("/mainMenu.fxml"));
         highScoresBtn.setOnAction(e -> navigateToHighScores());
+        difficultyBtn.setOnAction(e -> navigateToDifficulty());
         settingsBtn.setOnAction(e -> navigateToSettings());
     }
 
@@ -92,6 +94,35 @@ public class PauseMenuController {
                 stage.setScene(previousScene);
                 if (guiController != null) {
                     guiController.updatePauseState(false);
+                }
+            });
+
+            stage.setScene(new javafx.scene.Scene(root, 800, 600));
+            stage.show();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void navigateToDifficulty() {
+        try {
+            Scene previousScene = rootPane.getScene();
+            Stage stage = (Stage) previousScene.getWindow();
+
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/difficultyMenu.fxml"));
+            javafx.scene.Parent root = loader.load();
+            DifficultyController controller = loader.getController();
+
+            controller.setReturnScene(previousScene);
+            controller.setOnReturn(() -> {
+                if (guiController != null) {
+                    guiController.updatePauseState(true);
+                }
+            });
+            controller.setOnDifficultySelected(difficulty -> {
+                if (guiController != null) {
+                    guiController.changeGameDifficulty(difficulty);
+                    guiController.updatePauseState(true); // keep pause overlay visible after returning
                 }
             });
 

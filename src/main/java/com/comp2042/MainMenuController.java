@@ -18,8 +18,8 @@ public class MainMenuController {
     @FXML
     private void startGame() {
         try {
-            // Open the difficulty selection menu (styled like main menu)
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/difficultyMenu.fxml"));
+            // Open the mode selection menu first
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/modeMenu.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root, 800, 600);
 

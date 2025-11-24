@@ -10,9 +10,11 @@ public class GameOverPanel extends BorderPane {
 
     private final Label gameOverLabel;
     private final Label highScoreLabel;
+    private static final String DEFAULT_TEXT = "GAME OVER";
+    private static final String VICTORY_TEXT = "VICTORY!!!";
 
     public GameOverPanel() {
-        gameOverLabel = new Label("GAME OVER");
+        gameOverLabel = new Label(DEFAULT_TEXT);
         gameOverLabel.getStyleClass().add("gameOverStyle");
 
         highScoreLabel = new Label("NEW HIGH SCORE!");
@@ -33,6 +35,16 @@ public class GameOverPanel extends BorderPane {
     public void hideNewHighScore() {
         highScoreLabel.setVisible(false);
         highScoreLabel.setManaged(false);
+    }
+
+    public void showVictory() {
+        gameOverLabel.setText(VICTORY_TEXT);
+        setVisible(true);
+    }
+
+    public void resetText() {
+        gameOverLabel.setText(DEFAULT_TEXT);
+        hideNewHighScore();
     }
 
 }

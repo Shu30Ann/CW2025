@@ -99,35 +99,7 @@ public class GuiController implements Initializable {
         gamePanel.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent keyEvent) {
-                if (isPause.getValue() == Boolean.FALSE && isGameOver.getValue() == Boolean.FALSE) {
-                    if (keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.A) {
-                        refreshBrick(eventListener.onLeftEvent(new MoveEvent(EventType.LEFT, EventSource.USER)));
-                        keyEvent.consume();
-                    } else if (keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.D) {
-                        refreshBrick(eventListener.onRightEvent(new MoveEvent(EventType.RIGHT, EventSource.USER)));
-                        keyEvent.consume();
-                    } else if (keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.W) {
-                        refreshBrick(eventListener.onRotateEvent(new MoveEvent(EventType.ROTATE, EventSource.USER)));
-                        keyEvent.consume();
-                    } else if (keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.S) {
-                        moveDown(new MoveEvent(EventType.DOWN, EventSource.USER));
-                        keyEvent.consume();
-                    }
-                    else if (keyEvent.getCode() == KeyCode.SPACE) {
-                        eventListener.hardDrop();
-                        keyEvent.consume();
-                    }
-                    else if (keyEvent.getCode() == KeyCode.H) {
-                        eventListener.holdCurrentBrick();
-                        keyEvent.consume();
-                    }
-                }
-                if (keyEvent.getCode() == KeyCode.N) {
-                    newGame(null);
-                } else if (keyEvent.getCode() == KeyCode.P || keyEvent.getCode() == KeyCode.ESCAPE) {
-                    pauseGame(null);
-                    keyEvent.consume();
-                }
+                handleKeyInput(keyEvent);
             }
         });
 
@@ -159,6 +131,97 @@ public class GuiController implements Initializable {
                 gameCanvas.scaleYProperty().bind(scaleBinding);
             }
         });
+    }
+
+    /**
+     * Public helpers so external controllers (e.g., Versus mode) can trigger the
+     * same input handling logic without synthesizing KeyEvents.
+     */
+    public void moveLeft() {
+        if (!canAcceptInput()) return;
+        refreshBrick(eventListener.onLeftEvent(new MoveEvent(EventType.LEFT, EventSource.USER)));
+    }
+
+    public void moveRight() {
+        if (!canAcceptInput()) return;
+        refreshBrick(eventListener.onRightEvent(new MoveEvent(EventType.RIGHT, EventSource.USER)));
+    }
+
+    public void rotate() {
+        if (!canAcceptInput()) return;
+        refreshBrick(eventListener.onRotateEvent(new MoveEvent(EventType.ROTATE, EventSource.USER)));
+    }
+
+    public void softDrop() {
+        if (!canAcceptInput()) return;
+        moveDown(new MoveEvent(EventType.DOWN, EventSource.USER));
+    }
+
+    public void hardDrop() {
+        if (!canAcceptInput()) return;
+        eventListener.hardDrop();
+    }
+
+    public void hold() {
+        if (!canAcceptInput()) return;
+        eventListener.holdCurrentBrick();
+    }
+
+    public void togglePauseFromOutside() {
+        pauseGame(null);
+    }
+
+    public void startNewGame() {
+        gameOverPanel.resetText();
+        newGame(null);
+    }
+
+    public void showVictory() {
+        if (timeLine != null) {
+            try { timeLine.stop(); } catch (Exception ignored) {}
+        }
+        gameOverPanel.showVictory();
+        isGameOver.setValue(Boolean.TRUE);
+    }
+
+    public BooleanProperty gameOverProperty() {
+        return isGameOver;
+    }
+
+    private boolean canAcceptInput() {
+        return isPause.getValue() == Boolean.FALSE && isGameOver.getValue() == Boolean.FALSE;
+    }
+
+    private void handleKeyInput(KeyEvent keyEvent) {
+        if (canAcceptInput()) {
+            if (keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.A) {
+                moveLeft();
+                keyEvent.consume();
+            } else if (keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.D) {
+                moveRight();
+                keyEvent.consume();
+            } else if (keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.W) {
+                rotate();
+                keyEvent.consume();
+            } else if (keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.S) {
+                softDrop();
+                keyEvent.consume();
+            }
+            else if (keyEvent.getCode() == KeyCode.SPACE) {
+                hardDrop();
+                keyEvent.consume();
+            }
+            else if (keyEvent.getCode() == KeyCode.H) {
+                hold();
+                keyEvent.consume();
+            }
+        }
+        if (keyEvent.getCode() == KeyCode.N) {
+            startNewGame();
+        } else if (keyEvent.getCode() == KeyCode.P || keyEvent.getCode() == KeyCode.ESCAPE) {
+            togglePauseFromOutside();
+            keyEvent.consume();
+        }
     }
 
     /**
@@ -549,6 +612,9 @@ public class GuiController implements Initializable {
     public void changeGameDifficulty(GameDifficulty difficulty) {
         this.currentDifficulty = difficulty;
         createTimeline(difficulty.getDropDelayMillis());
+        if (isPause.get()) {
+            timeLine.pause(); // respect paused state when difficulty is changed mid-game
+        }
     }
 
 

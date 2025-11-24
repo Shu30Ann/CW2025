@@ -35,6 +35,11 @@
                 prefWidth="220"
                 styleClass="menu-button blue"/>
 
+        <Button fx:id="difficultyBtn"
+                text="Change Difficulty"
+                prefWidth="220"
+                styleClass="menu-button red"/>
+
         <Button fx:id="settingsBtn"
                 text="Settings"
                 prefWidth="220"
